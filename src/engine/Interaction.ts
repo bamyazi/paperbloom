@@ -265,7 +265,25 @@ export class InteractionManager {
     for (const h of this.hotspots) {
       h.object.traverse((child) => {
         const mesh = child as THREE.Mesh;
-        if (!mesh.isMesh || !mesh.userData.render || !mesh.geometry) return;
+        if (!mesh.isMesh || !mesh.geometry) return;
+
+        if (mesh.userData.hitPad) {
+          mesh.updateWorldMatrix(true, false);
+          const centre = new THREE.Vector3().setFromMatrixPosition(mesh.matrixWorld);
+          const [cxp, cyp] = toPx(centre.clone());
+          const edge = centre.clone();
+          const sphere = (mesh.geometry as THREE.SphereGeometry).parameters?.radius ?? 0.5;
+          edge.x += sphere;
+          const [exp] = toPx(edge);
+          ctx.strokeStyle = "rgba(0,90,255,0.8)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(cxp, cyp, Math.abs(exp - cxp), 0, Math.PI * 2);
+          ctx.stroke();
+          return;
+        }
+
+        if (!mesh.userData.render) return;
         const geo = mesh.geometry as THREE.BufferGeometry;
         if (!geo.boundingBox) geo.computeBoundingBox();
         const bb = geo.boundingBox;
