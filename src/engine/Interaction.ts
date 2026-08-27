@@ -96,22 +96,34 @@ export class InteractionManager {
 
     for (const hotspot of this.hotspots) {
       if (hotspot.generous) {
-        if (!this.artScreenBox(hotspot.object)) continue;
-        const { minX, minY, maxX, maxY } = this.screenBox;
-        const margin = 0.04; // a touch of slack around the edges
-        if (
-          this.pointer.x < minX - margin ||
-          this.pointer.x > maxX + margin ||
-          this.pointer.y < minY - margin ||
-          this.pointer.y > maxY + margin
-        ) {
-          continue;
+        // Count a tap that lands inside the art's on-screen box (covers big
+        // characters fully) OR that hits the forgiving pad sphere (covers
+        // pieces whose flat art projects to a thin/awkward box). Score by how
+        // central the tap is so the closest piece wins.
+        let candidate = false;
+        let score = Infinity;
+        if (this.artScreenBox(hotspot.object)) {
+          const { minX, minY, maxX, maxY } = this.screenBox;
+          const margin = 0.04;
+          const inBox =
+            this.pointer.x >= minX - margin &&
+            this.pointer.x <= maxX + margin &&
+            this.pointer.y >= minY - margin &&
+            this.pointer.y <= maxY + margin;
+          const cx = (minX + maxX) / 2;
+          const cy = (minY + maxY) / 2;
+          const d = Math.hypot(this.pointer.x - cx, this.pointer.y - cy);
+          if (inBox) {
+            candidate = true;
+            score = d;
+          }
         }
-        const cx = (minX + maxX) / 2;
-        const cy = (minY + maxY) / 2;
-        const d = Math.hypot(this.pointer.x - cx, this.pointer.y - cy);
-        if (d < bestGenerousDist) {
-          bestGenerousDist = d;
+        if (!candidate && this.raycaster.intersectObject(hotspot.object, true).length > 0) {
+          candidate = true;
+          score = 0.5; // pad-only hit: acceptable but yields to a boxed hit
+        }
+        if (candidate && score < bestGenerousDist) {
+          bestGenerousDist = score;
           bestGenerous = hotspot;
         }
       } else {
