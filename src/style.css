@@ -221,6 +221,28 @@ body {
   }
 }
 
+/* Landscape phones: 20% smaller than the portrait sizing above. */
+@media (orientation: landscape) and (max-height: 640px) {
+  #title-card h1 {
+    font-size: clamp(2.64rem, 10.8vmin, 8.4rem);
+  }
+  #title-card p {
+    font-size: clamp(1.14rem, 3.6vmin, 1.92rem);
+  }
+  #start-button {
+    font-size: clamp(1.5rem, 6vmin, 3.36rem);
+  }
+  #caption {
+    font-size: clamp(1.2rem, 4.32vmin, 2.52rem);
+  }
+  #end-card h1 {
+    font-size: clamp(2.64rem, 10.8vmin, 8.4rem);
+  }
+  #end-card p {
+    font-size: clamp(1.2rem, 3.84vmin, 2.16rem);
+  }
+}
+
 /* Landscape is the intended orientation — nudge phones out of portrait. */
 #rotate-hint {
   display: none;

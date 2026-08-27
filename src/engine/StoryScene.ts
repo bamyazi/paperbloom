@@ -256,9 +256,9 @@ export abstract class StoryScene {
     for (const { popup } of this.popups) {
       if (popup.isColored) continue;
       const dist = Math.abs(popup.root.position.z - camZ);
-      // Near pieces bloom first; the wave reaches the horizon over ~1.4s.
-      const delay = (dist / maxDist) * 1.4;
-      popup.colorizeFade(popup.naturalColor ?? DEFAULT_BLOOM_COLOR, 0.9, delay);
+      // Near pieces bloom first; the wave reaches the horizon over ~0.7s.
+      const delay = (dist / maxDist) * 0.7;
+      popup.colorizeFade(popup.naturalColor ?? DEFAULT_BLOOM_COLOR, 0.5, delay);
     }
   }
 

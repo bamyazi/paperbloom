@@ -214,7 +214,11 @@ export class Popup {
           transparent: true,
           opacity: 0,
           depthWrite: false,
-          depthTest: false
+          depthTest: false,
+          // Double-sided so the tap ray still hits the pad when the camera ends
+          // up inside it (large characters), where front-face culling would
+          // otherwise drop the intersection and the piece couldn't be tapped.
+          side: THREE.DoubleSide
         })
       );
       pad.renderOrder = -1;

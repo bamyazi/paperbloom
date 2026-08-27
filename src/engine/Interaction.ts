@@ -27,8 +27,9 @@ export class InteractionManager {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private readonly hotspots: Hotspot[] = [];
-  // Scratch vector reused when measuring a hotspot's centre against the ray.
+  // Scratch objects reused when measuring a hotspot's centre against the ray.
   private readonly center = new THREE.Vector3();
+  private readonly bounds = new THREE.Box3();
   // Cached 2D contexts for sampling cutout alpha during pixel-accurate picking.
   private readonly alphaContexts = new WeakMap<
     HTMLCanvasElement,
@@ -97,7 +98,8 @@ export class InteractionManager {
       if (hits.length === 0) continue;
 
       if (hotspot.generous) {
-        hotspot.object.getWorldPosition(this.center);
+        this.bounds.setFromObject(hotspot.object);
+        this.bounds.getCenter(this.center);
         const d = this.raycaster.ray.distanceToPoint(this.center);
         if (d < bestCenterDist) {
           bestCenterDist = d;
