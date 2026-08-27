@@ -27,6 +27,8 @@ export class InteractionManager {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private readonly hotspots: Hotspot[] = [];
+  // Scratch vector reused when measuring a hotspot's centre against the ray.
+  private readonly center = new THREE.Vector3();
   // Cached 2D contexts for sampling cutout alpha during pixel-accurate picking.
   private readonly alphaContexts = new WeakMap<
     HTMLCanvasElement,
@@ -80,24 +82,41 @@ export class InteractionManager {
   private pick(): Hotspot | null {
     this.raycaster.setFromCamera(this.pointer, this.camera);
 
-    // Choose the nearest hotspot whose hit lands on a *drawn* (opaque) pixel,
-    // so overlapping transparent cutout quads don't steal each other's taps.
-    let best: Hotspot | null = null;
-    let bestDistance = Infinity;
+    // Generous targets use big, overlapping invisible pads, so the nearest
+    // *surface* hit is often a neighbour. Instead, among every target the ray
+    // passes through, pick the one whose centre sits closest to the ray — i.e.
+    // the piece the tap is really aimed at. Precise (non-generous) targets keep
+    // requiring a hit on a painted, opaque pixel and pick the nearest such.
+    let bestGenerous: Hotspot | null = null;
+    let bestCenterDist = Infinity;
+    let bestPrecise: Hotspot | null = null;
+    let bestPreciseDist = Infinity;
+
     for (const hotspot of this.hotspots) {
       const hits = this.raycaster.intersectObject(hotspot.object, true);
-      for (const hit of hits) {
-        // Generous targets accept any hit on their area (a big, child-friendly
-        // tap zone); others require landing on a painted, opaque pixel.
-        if (!hotspot.generous && !this.isOpaqueHit(hit)) continue;
-        if (hit.distance < bestDistance) {
-          bestDistance = hit.distance;
-          best = hotspot;
+      if (hits.length === 0) continue;
+
+      if (hotspot.generous) {
+        hotspot.object.getWorldPosition(this.center);
+        const d = this.raycaster.ray.distanceToPoint(this.center);
+        if (d < bestCenterDist) {
+          bestCenterDist = d;
+          bestGenerous = hotspot;
         }
-        break; // hits are sorted near→far; first accepted one is this hotspot's best
+      } else {
+        for (const hit of hits) {
+          if (!this.isOpaqueHit(hit)) continue;
+          if (hit.distance < bestPreciseDist) {
+            bestPreciseDist = hit.distance;
+            bestPrecise = hotspot;
+          }
+          break; // hits are sorted near→far; first accepted one is this hotspot's best
+        }
       }
     }
-    return best;
+
+    // Prefer a precise, painted-pixel hit; otherwise the closest generous pad.
+    return bestPrecise ?? bestGenerous;
   }
 
   /** True if the ray hit a painted pixel of the cutout (not transparent paper). */
