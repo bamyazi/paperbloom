@@ -51,12 +51,21 @@ export class Game {
   private running = false;
 
   constructor(canvas: HTMLCanvasElement) {
+    // Phones have weak GPUs but very high pixel densities; antialiasing and a
+    // 2x+ pixel ratio there flood the fill rate and drop the frame rate, which
+    // in turn slows the dt-driven animation clock. Trim both on mobile.
+    const isMobile =
+      typeof navigator !== "undefined" &&
+      /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: true,
-      alpha: false
+      antialias: !isMobile,
+      alpha: false,
+      powerPreference: "high-performance"
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2)
+    );
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.scene.background = makeSkyTexture();
     this.scene.fog = new THREE.Fog(PAPER_BACKGROUND, 18, 40);
@@ -99,7 +108,9 @@ export class Game {
   }
 
   private readonly tick = (): void => {
-    const dt = Math.min(this.clock.getDelta(), 0.05);
+    // Clamp only against big jumps (tab switches). A low cap would make the
+    // whole game run in slow motion on phones that render below 1/cap fps.
+    const dt = Math.min(this.clock.getDelta(), 0.1);
     this.scenes.update(dt);
     this.hud.update(dt);
     this.renderer.render(this.scene, this.camera);
