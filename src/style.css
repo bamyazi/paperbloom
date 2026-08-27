@@ -199,3 +199,25 @@ body {
   max-width: min(84vw, 640px);
 }
 
+/* Phones: shrink all UI text to 60% (a 40% reduction) of its base size. */
+@media (max-width: 640px) {
+  #title-card h1 {
+    font-size: clamp(1.32rem, 5.4vw, 4.2rem);
+  }
+  #title-card p {
+    font-size: clamp(0.57rem, 1.8vw, 0.96rem);
+  }
+  #start-button {
+    font-size: clamp(0.75rem, 3vw, 1.68rem);
+  }
+  #caption {
+    font-size: clamp(0.6rem, 2.16vw, 1.26rem);
+  }
+  #end-card h1 {
+    font-size: clamp(1.32rem, 5.4vw, 4.2rem);
+  }
+  #end-card p {
+    font-size: clamp(0.6rem, 1.92vw, 1.08rem);
+  }
+}
+
