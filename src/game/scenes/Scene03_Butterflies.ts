@@ -53,7 +53,7 @@ export class Scene03Butterflies extends StoryScene {
     this.buildButterflies();
     this.buildGirl();
 
-    this.ctx.hud.showCaption("The path opened into a bright, grey meadow…", 5);
+    this.ctx.hud.showCaption("The path opened into a dull, grey meadow…", 5);
   }
 
   private random(): number {
