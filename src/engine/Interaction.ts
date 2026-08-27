@@ -27,6 +27,9 @@ export class InteractionManager {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private readonly hotspots: Hotspot[] = [];
+  // Scratch vectors reused when projecting a target into screen space.
+  private readonly tmpA = new THREE.Vector3();
+  private readonly tmpB = new THREE.Vector3();
   // Cached 2D contexts for sampling cutout alpha during pixel-accurate picking.
   private readonly alphaContexts = new WeakMap<
     HTMLCanvasElement,
@@ -80,43 +83,82 @@ export class InteractionManager {
   private pick(): Hotspot | null {
     this.raycaster.setFromCamera(this.pointer, this.camera);
 
-    // Two ways a target can be hit, matched to the visible artwork so the tap
-    // zone always sits exactly on the piece (never floating above it):
-    //  • generous pieces: a ray hit anywhere on their drawn cutout plane (the
-    //    plane *is* the picture), ignoring the invisible pad and ground shadow;
-    //  • precise pieces: a hit on a painted, opaque pixel.
-    // The nearest qualifying piece wins.
+    // Generous pieces (colouring targets) use a screen-space test tied to how
+    // they're drawn: project the piece's centre and use its on-screen size as a
+    // forgiving catch radius. This maps the tap zone straight onto the visible
+    // artwork at any size — no invisible pad floating above it, and it can't
+    // miss a big character. Precise pieces still need a painted, opaque pixel.
     let bestPrecise: Hotspot | null = null;
     let bestPreciseDist = Infinity;
     let bestGenerous: Hotspot | null = null;
-    let bestGenerousDist = Infinity;
+    let bestGenerousScore = Infinity;
 
     for (const hotspot of this.hotspots) {
-      const hits = this.raycaster.intersectObject(hotspot.object, true);
-      for (const hit of hits) {
-        // Only the drawn cutout meshes carry a `render` hook; the invisible hit
-        // pad and the shadow don't — skip those so the zone hugs the artwork.
-        if (!(hit.object as THREE.Mesh).userData.render) continue;
-
-        if (hotspot.generous) {
-          if (hit.distance < bestGenerousDist) {
-            bestGenerousDist = hit.distance;
-            bestGenerous = hotspot;
+      if (hotspot.generous) {
+        const score = this.generousScore(hotspot.object);
+        if (score !== null && score < bestGenerousScore) {
+          bestGenerousScore = score;
+          bestGenerous = hotspot;
+        }
+      } else {
+        const hits = this.raycaster.intersectObject(hotspot.object, true);
+        for (const hit of hits) {
+          if (!(hit.object as THREE.Mesh).userData.render) continue;
+          if (!this.isOpaqueHit(hit)) continue;
+          if (hit.distance < bestPreciseDist) {
+            bestPreciseDist = hit.distance;
+            bestPrecise = hotspot;
           }
-          break; // nearest art hit for this hotspot
+          break;
         }
-
-        if (!this.isOpaqueHit(hit)) continue;
-        if (hit.distance < bestPreciseDist) {
-          bestPreciseDist = hit.distance;
-          bestPrecise = hotspot;
-        }
-        break;
       }
     }
 
     // Prefer a precise, painted-pixel hit; otherwise the closest generous piece.
     return bestPrecise ?? bestGenerous;
+  }
+
+  /**
+   * How well a tap targets a generous piece: 0 = dead centre, 1 = on its edge,
+   * null = outside its (forgiving) catch radius. Uses the piece's projected
+   * centre and its on-screen size, so the zone matches the drawn artwork.
+   */
+  private generousScore(object: THREE.Object3D): number | null {
+    let found = false;
+    let centreX = 0;
+    let centreY = 0;
+    let radius = 0;
+
+    object.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      // Only the drawn cutout meshes carry a `render` hook (not pad/shadow).
+      if (!mesh.isMesh || !mesh.userData.render || !mesh.geometry) return;
+      mesh.updateWorldMatrix(true, false);
+
+      // Plane centre (its local origin) → screen; that is the visible centre.
+      this.tmpA.setFromMatrixPosition(mesh.matrixWorld);
+      this.tmpB.copy(this.tmpA);
+      this.tmpA.project(this.camera);
+
+      // Offset by the piece's larger half-extent to gauge its on-screen size.
+      const params = (mesh.geometry as THREE.PlaneGeometry).parameters;
+      const half = Math.max(params?.width ?? 1, params?.height ?? 1) / 2;
+      this.tmpB.y += half;
+      this.tmpB.project(this.camera);
+      const r = Math.hypot(this.tmpA.x - this.tmpB.x, this.tmpA.y - this.tmpB.y);
+
+      if (!found) {
+        centreX = this.tmpA.x;
+        centreY = this.tmpA.y;
+        found = true;
+      }
+      radius = Math.max(radius, r);
+    });
+
+    if (!found) return null;
+    const d = Math.hypot(this.pointer.x - centreX, this.pointer.y - centreY);
+    const catchRadius = radius * 1.15 + 0.03; // a little slack for small pieces
+    return d <= catchRadius ? d / catchRadius : null;
   }
 
   /** True if the ray hit a painted pixel of the cutout (not transparent paper). */
