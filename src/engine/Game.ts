@@ -9,6 +9,13 @@ import { SceneContext, StoryScene } from "./StoryScene.ts";
 
 const PAPER_BACKGROUND = new THREE.Color("#efe9d8");
 
+// Scenes are framed for a landscape view; targets spread horizontally. Holding
+// a constant *horizontal* field of view keeps that whole width on screen in
+// portrait too (the vertical FOV widens instead, capped to limit distortion).
+const DESIGN_VFOV = 72;
+const DESIGN_ASPECT = 1.6;
+const MAX_VFOV = 120;
+
 /**
  * A soft vertical gradient "sky" for the scene backdrop — a warm cream that
  * lifts to a paler, lightly sunlit top. Reads far nicer than a flat fill and
@@ -95,6 +102,7 @@ export class Game {
 
     this.resize();
     window.addEventListener("resize", this.resize);
+    window.addEventListener("orientationchange", this.resize);
   }
 
   /** Load a scene and begin the render loop (idempotent). */
@@ -119,7 +127,16 @@ export class Game {
   private readonly resize = (): void => {
     const width = window.innerWidth;
     const height = window.innerHeight;
-    this.camera.aspect = width / height;
+    const aspect = width / height;
+    this.camera.aspect = aspect;
+    if (aspect < DESIGN_ASPECT) {
+      const hfovTan =
+        Math.tan(THREE.MathUtils.degToRad(DESIGN_VFOV) / 2) * DESIGN_ASPECT;
+      const vfov = THREE.MathUtils.radToDeg(2 * Math.atan(hfovTan / aspect));
+      this.camera.fov = Math.min(vfov, MAX_VFOV);
+    } else {
+      this.camera.fov = DESIGN_VFOV;
+    }
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
   };

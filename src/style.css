@@ -81,14 +81,14 @@ body {
 }
 
 #title-card h1 {
-  font-size: clamp(2.2rem, 9vw, 7rem);
+  font-size: clamp(2.2rem, 9vmin, 7rem);
   margin: 0;
   letter-spacing: 0.04em;
   font-weight: 700;
 }
 
 #title-card p {
-  font-size: clamp(0.95rem, 3vw, 1.6rem);
+  font-size: clamp(0.95rem, 3vmin, 1.6rem);
   font-weight: 500;
   opacity: 0.75;
   margin: 0 0 1.5rem;
@@ -97,7 +97,7 @@ body {
 #start-button {
   pointer-events: auto;
   font-family: inherit;
-  font-size: clamp(1.25rem, 5vw, 2.8rem);
+  font-size: clamp(1.25rem, 5vmin, 2.8rem);
   font-weight: 700;
   padding: 0.8em 1.6em;
   color: #fff;
@@ -151,7 +151,7 @@ body {
   transform: translateX(-50%) translateY(10px);
   max-width: min(84vw, 760px);
   text-align: center;
-  font-size: clamp(1rem, 3.6vw, 2.1rem);
+  font-size: clamp(1rem, 3.6vmin, 2.1rem);
   font-weight: 500;
   line-height: 1.4;
   opacity: 0;
@@ -185,39 +185,78 @@ body {
 }
 
 #end-card h1 {
-  font-size: clamp(2.2rem, 9vw, 7rem);
+  font-size: clamp(2.2rem, 9vmin, 7rem);
   margin: 0;
   letter-spacing: 0.04em;
   font-weight: 700;
 }
 
 #end-card p {
-  font-size: clamp(1rem, 3.2vw, 1.8rem);
+  font-size: clamp(1rem, 3.2vmin, 1.8rem);
   font-weight: 500;
   opacity: 0.85;
   margin: 0;
   max-width: min(84vw, 640px);
 }
 
-/* Phones: shrink all UI text to 60% (a 40% reduction) of its base size. */
-@media (max-width: 640px) {
+/* Phones (portrait or short landscape): shrink UI text to ~60% of base. */
+@media (max-width: 640px), (max-height: 640px) {
   #title-card h1 {
-    font-size: clamp(1.32rem, 5.4vw, 4.2rem);
+    font-size: clamp(1.32rem, 5.4vmin, 4.2rem);
   }
   #title-card p {
-    font-size: clamp(0.57rem, 1.8vw, 0.96rem);
+    font-size: clamp(0.57rem, 1.8vmin, 0.96rem);
   }
   #start-button {
-    font-size: clamp(0.75rem, 3vw, 1.68rem);
+    font-size: clamp(0.75rem, 3vmin, 1.68rem);
   }
   #caption {
-    font-size: clamp(0.6rem, 2.16vw, 1.26rem);
+    font-size: clamp(0.6rem, 2.16vmin, 1.26rem);
   }
   #end-card h1 {
-    font-size: clamp(1.32rem, 5.4vw, 4.2rem);
+    font-size: clamp(1.32rem, 5.4vmin, 4.2rem);
   }
   #end-card p {
-    font-size: clamp(0.6rem, 1.92vw, 1.08rem);
+    font-size: clamp(0.6rem, 1.92vmin, 1.08rem);
+  }
+}
+
+/* Portrait is the intended orientation — nudge phones out of landscape. */
+#rotate-hint {
+  display: none;
+}
+
+@media (orientation: landscape) and (max-height: 540px) {
+  #rotate-hint {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    text-align: center;
+    padding: 1.5rem;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: clamp(1rem, 5vmin, 1.6rem);
+    font-weight: 600;
+  }
+
+  #rotate-hint .rotate-emoji {
+    font-size: clamp(2.4rem, 12vmin, 4rem);
+    animation: rotate-nudge 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes rotate-nudge {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-90deg);
   }
 }
 
