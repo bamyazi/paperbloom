@@ -199,25 +199,25 @@ body {
   max-width: min(84vw, 640px);
 }
 
-/* Phones (portrait or short landscape): shrink UI text to ~60% of base. */
+/* Phones (portrait or short landscape): UI text sizing. */
 @media (max-width: 640px), (max-height: 640px) {
   #title-card h1 {
-    font-size: clamp(1.32rem, 5.4vmin, 4.2rem);
+    font-size: clamp(3.3rem, 13.5vmin, 10.5rem);
   }
   #title-card p {
-    font-size: clamp(0.57rem, 1.8vmin, 0.96rem);
+    font-size: clamp(1.43rem, 4.5vmin, 2.4rem);
   }
   #start-button {
-    font-size: clamp(0.75rem, 3vmin, 1.68rem);
+    font-size: clamp(1.88rem, 7.5vmin, 4.2rem);
   }
   #caption {
-    font-size: clamp(0.6rem, 2.16vmin, 1.26rem);
+    font-size: clamp(1.5rem, 5.4vmin, 3.15rem);
   }
   #end-card h1 {
-    font-size: clamp(1.32rem, 5.4vmin, 4.2rem);
+    font-size: clamp(3.3rem, 13.5vmin, 10.5rem);
   }
   #end-card p {
-    font-size: clamp(0.6rem, 1.92vmin, 1.08rem);
+    font-size: clamp(1.5rem, 4.8vmin, 2.7rem);
   }
 }
 
