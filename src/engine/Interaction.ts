@@ -121,41 +121,56 @@ export class InteractionManager {
   private pick(): Hotspot | null {
     this.raycaster.setFromCamera(this.pointer, this.camera);
 
-    // Raycast the actual drawn cutout planes (the plane *is* the picture), so
-    // the tap zone lines up exactly with what's on screen. The invisible pad
-    // and ground shadow carry no `render` hook, so they're skipped. Generous
-    // pieces accept a hit anywhere on their plane; precise pieces need a
-    // painted, opaque pixel. Nearest qualifying piece wins.
+    // Generous pieces (colouring targets) use a screen-space test: project the
+    // drawn cutout plane's corners to the screen (the same projection the game
+    // renders with) and check the tap falls inside that box. This matches the
+    // visible artwork exactly and sidesteps raycaster quirks (bounding-sphere /
+    // face-culling early-outs) that made some pieces un-tappable. Precise pieces
+    // still need a hit on a painted, opaque pixel.
     let bestPrecise: Hotspot | null = null;
     let bestPreciseDist = Infinity;
     let bestGenerous: Hotspot | null = null;
     let bestGenerousDist = Infinity;
 
     for (const hotspot of this.hotspots) {
-      const hits = this.raycaster.intersectObject(hotspot.object, true);
-
       if (hotspot.generous) {
-        // Prefer a hit on the drawn plane (aligned with the artwork); fall back
-        // to the forgiving pad sphere so large pieces are still catchable.
-        let artDist = Infinity;
-        let padDist = Infinity;
-        for (const hit of hits) {
-          const ud = (hit.object as THREE.Mesh).userData;
-          if (ud.render) {
-            artDist = hit.distance;
-            break;
+        let candidate = false;
+        let score = Infinity;
+        const box = this.projectedArtBox(hotspot.object);
+        if (box) {
+          const m = 0.03; // a little slack around the edges
+          const inBox =
+            this.pointer.x >= box.minX - m &&
+            this.pointer.x <= box.maxX + m &&
+            this.pointer.y >= box.minY - m &&
+            this.pointer.y <= box.maxY + m;
+          if (inBox) {
+            const cx = (box.minX + box.maxX) / 2;
+            const cy = (box.minY + box.maxY) / 2;
+            candidate = true;
+            score = Math.hypot(this.pointer.x - cx, this.pointer.y - cy);
           }
-          if (ud.hitPad && hit.distance < padDist) padDist = hit.distance;
         }
-        const score =
-          artDist < Infinity ? artDist : padDist < Infinity ? padDist + 1000 : Infinity;
-        if (score < bestGenerousDist) {
+        if (!candidate) {
+          // Independent fallback: a real ray hit on the drawn plane or its pad.
+          const hits = this.raycaster.intersectObject(hotspot.object, true);
+          for (const hit of hits) {
+            const ud = (hit.object as THREE.Mesh).userData;
+            if (ud.render || ud.hitPad) {
+              candidate = true;
+              score = 100; // worse than any in-box hit, better than nothing
+              break;
+            }
+          }
+        }
+        if (candidate && score < bestGenerousDist) {
           bestGenerousDist = score;
           bestGenerous = hotspot;
         }
         continue;
       }
 
+      const hits = this.raycaster.intersectObject(hotspot.object, true);
       for (const hit of hits) {
         if (!(hit.object as THREE.Mesh).userData.render) continue;
         if (!this.isOpaqueHit(hit)) continue;
@@ -169,6 +184,45 @@ export class InteractionManager {
 
     // Prefer a precise, painted-pixel hit; otherwise the closest generous piece.
     return bestPrecise ?? bestGenerous;
+  }
+
+  /**
+   * Project a piece's drawn cutout plane(s) to normalised screen space and
+   * return the enclosing box (NDC). Ignores the invisible pad and shadow.
+   */
+  private projectedArtBox(
+    object: THREE.Object3D
+  ): { minX: number; minY: number; maxX: number; maxY: number } | null {
+    let found = false;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    object.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.userData.render || !mesh.geometry) return;
+      const geo = mesh.geometry as THREE.BufferGeometry;
+      if (!geo.boundingBox) geo.computeBoundingBox();
+      const bb = geo.boundingBox;
+      if (!bb) return;
+      mesh.updateWorldMatrix(true, false);
+      for (const [x, y] of [
+        [bb.min.x, bb.min.y],
+        [bb.max.x, bb.min.y],
+        [bb.max.x, bb.max.y],
+        [bb.min.x, bb.max.y]
+      ] as const) {
+        const v = new THREE.Vector3(x, y, 0).applyMatrix4(mesh.matrixWorld).project(this.camera);
+        minX = Math.min(minX, v.x);
+        minY = Math.min(minY, v.y);
+        maxX = Math.max(maxX, v.x);
+        maxY = Math.max(maxY, v.y);
+        found = true;
+      }
+    });
+
+    return found ? { minX, minY, maxX, maxY } : null;
   }
 
   /** True if the ray hit a painted pixel of the cutout (not transparent paper). */
