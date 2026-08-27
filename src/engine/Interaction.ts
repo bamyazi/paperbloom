@@ -36,6 +36,8 @@ export class InteractionManager {
   private hovered: Hotspot | null = null;
   private enabled = true;
   private pointerDownId = -1;
+  // Optional on-screen tap diagnostics, enabled with `?debug` in the URL.
+  private readonly debugEl: HTMLElement | null;
 
   constructor(
     private readonly camera: THREE.Camera,
@@ -44,6 +46,32 @@ export class InteractionManager {
     domElement.addEventListener("pointermove", this.handlePointerMove);
     domElement.addEventListener("pointerdown", this.handlePointerDown);
     domElement.addEventListener("pointerup", this.handlePointerUp);
+    this.debugEl = this.createDebugOverlay();
+  }
+
+  private createDebugOverlay(): HTMLElement | null {
+    if (typeof location === "undefined" || !new URLSearchParams(location.search).has("debug")) {
+      return null;
+    }
+    const el = document.createElement("pre");
+    Object.assign(el.style, {
+      position: "fixed",
+      left: "8px",
+      top: "8px",
+      zIndex: "200",
+      margin: "0",
+      padding: "8px 10px",
+      maxWidth: "70vw",
+      font: "12px/1.35 monospace",
+      color: "#0a0",
+      background: "rgba(255,255,255,0.85)",
+      borderRadius: "6px",
+      pointerEvents: "none",
+      whiteSpace: "pre-wrap"
+    } satisfies Partial<CSSStyleDeclaration>);
+    el.textContent = "tap a piece…";
+    document.body.appendChild(el);
+    return el;
   }
 
   register(hotspot: Hotspot): void {
@@ -92,17 +120,31 @@ export class InteractionManager {
 
     for (const hotspot of this.hotspots) {
       const hits = this.raycaster.intersectObject(hotspot.object, true);
+
+      if (hotspot.generous) {
+        // Prefer a hit on the drawn plane (aligned with the artwork); fall back
+        // to the forgiving pad sphere so large pieces are still catchable.
+        let artDist = Infinity;
+        let padDist = Infinity;
+        for (const hit of hits) {
+          const ud = (hit.object as THREE.Mesh).userData;
+          if (ud.render) {
+            artDist = hit.distance;
+            break;
+          }
+          if (ud.hitPad && hit.distance < padDist) padDist = hit.distance;
+        }
+        const score =
+          artDist < Infinity ? artDist : padDist < Infinity ? padDist + 1000 : Infinity;
+        if (score < bestGenerousDist) {
+          bestGenerousDist = score;
+          bestGenerous = hotspot;
+        }
+        continue;
+      }
+
       for (const hit of hits) {
         if (!(hit.object as THREE.Mesh).userData.render) continue;
-
-        if (hotspot.generous) {
-          if (hit.distance < bestGenerousDist) {
-            bestGenerousDist = hit.distance;
-            bestGenerous = hotspot;
-          }
-          break;
-        }
-
         if (!this.isOpaqueHit(hit)) continue;
         if (hit.distance < bestPreciseDist) {
           bestPreciseDist = hit.distance;
@@ -165,6 +207,27 @@ export class InteractionManager {
     this.pointerDownId = -1;
     this.updatePointer(event);
     const hit = this.pick();
+    if (this.debugEl) this.writeDebug(hit);
     if (hit) hit.onClick();
   };
+
+  /** Report what the tap ray met for each registered piece (debug overlay). */
+  private writeDebug(picked: Hotspot | null): void {
+    if (!this.debugEl) return;
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const lines: string[] = [
+      `tap ${this.pointer.x.toFixed(2)},${this.pointer.y.toFixed(2)}  pieces:${this.hotspots.length}  picked:${picked ? "YES" : "no"}`
+    ];
+    this.hotspots.forEach((h, i) => {
+      const hits = this.raycaster.intersectObject(h.object, true);
+      const kinds = hits
+        .map((ht) => {
+          const ud = (ht.object as THREE.Mesh).userData;
+          return ud.render ? "art" : ud.hitPad ? "pad" : "oth";
+        })
+        .join(",");
+      lines.push(`#${i} gen:${h.generous ? 1 : 0} hits:${hits.length} [${kinds}]`);
+    });
+    this.debugEl.textContent = lines.join("\n");
+  }
 }

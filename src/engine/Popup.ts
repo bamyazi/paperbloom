@@ -222,6 +222,7 @@ export class Popup {
         })
       );
       pad.renderOrder = -1;
+      pad.userData.hitPad = true;
       hinge.mesh.add(pad);
     }
   }
