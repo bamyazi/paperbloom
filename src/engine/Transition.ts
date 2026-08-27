@@ -63,7 +63,7 @@ export class Transition {
   }
 
   /** Turn the page, invoking `onCovered` while the screen is fully hidden. */
-  wipe(onCovered: () => void, duration = 1200): void {
+  wipe(onCovered: () => void, duration = 850): void {
     if (this.busy) {
       onCovered();
       return;

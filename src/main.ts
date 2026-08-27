@@ -26,7 +26,7 @@ const scene6 = new Scene06Sky();
 // Each chapter wipes to the next once its colouring puzzle is solved — after a
 // pause long enough to watch Mabli's celebration and the whole world bloom.
 const wipeTo = (next: Parameters<typeof game.scenes.go>[0]): void => {
-  window.setTimeout(() => game.scenes.go(next, { wipe: true }), 6000);
+  window.setTimeout(() => game.scenes.go(next, { wipe: true }), 3200);
 };
 scene1.onComplete = () => wipeTo(scene2);
 scene2.onComplete = () => wipeTo(scene3);
