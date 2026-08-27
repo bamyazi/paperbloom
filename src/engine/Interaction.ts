@@ -27,9 +27,9 @@ export class InteractionManager {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private readonly hotspots: Hotspot[] = [];
-  // Scratch objects reused when measuring a hotspot's centre against the ray.
-  private readonly center = new THREE.Vector3();
-  private readonly bounds = new THREE.Box3();
+  // Scratch objects reused when projecting a target's art into screen space.
+  private readonly corner = new THREE.Vector3();
+  private readonly screenBox = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
   // Cached 2D contexts for sampling cutout alpha during pixel-accurate picking.
   private readonly alphaContexts = new WeakMap<
     HTMLCanvasElement,
@@ -83,29 +83,39 @@ export class InteractionManager {
   private pick(): Hotspot | null {
     this.raycaster.setFromCamera(this.pointer, this.camera);
 
-    // Generous targets use big, overlapping invisible pads, so the nearest
-    // *surface* hit is often a neighbour. Instead, among every target the ray
-    // passes through, pick the one whose centre sits closest to the ray — i.e.
-    // the piece the tap is really aimed at. Precise (non-generous) targets keep
-    // requiring a hit on a painted, opaque pixel and pick the nearest such.
-    let bestGenerous: Hotspot | null = null;
-    let bestCenterDist = Infinity;
+    // Generous targets (colouring pieces) are tappable across their *whole*
+    // drawn area: we project just the artwork into screen space and test the
+    // tap against that box (plus a little slack). This covers big multi-extent
+    // characters fully and stays reliable no matter how close the camera sits —
+    // where the old invisible sphere pad could miss. Precise (non-generous)
+    // targets still require landing on a painted, opaque pixel.
     let bestPrecise: Hotspot | null = null;
     let bestPreciseDist = Infinity;
+    let bestGenerous: Hotspot | null = null;
+    let bestGenerousDist = Infinity;
 
     for (const hotspot of this.hotspots) {
-      const hits = this.raycaster.intersectObject(hotspot.object, true);
-      if (hits.length === 0) continue;
-
       if (hotspot.generous) {
-        this.bounds.setFromObject(hotspot.object);
-        this.bounds.getCenter(this.center);
-        const d = this.raycaster.ray.distanceToPoint(this.center);
-        if (d < bestCenterDist) {
-          bestCenterDist = d;
+        if (!this.artScreenBox(hotspot.object)) continue;
+        const { minX, minY, maxX, maxY } = this.screenBox;
+        const margin = 0.04; // a touch of slack around the edges
+        if (
+          this.pointer.x < minX - margin ||
+          this.pointer.x > maxX + margin ||
+          this.pointer.y < minY - margin ||
+          this.pointer.y > maxY + margin
+        ) {
+          continue;
+        }
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+        const d = Math.hypot(this.pointer.x - cx, this.pointer.y - cy);
+        if (d < bestGenerousDist) {
+          bestGenerousDist = d;
           bestGenerous = hotspot;
         }
       } else {
+        const hits = this.raycaster.intersectObject(hotspot.object, true);
         for (const hit of hits) {
           if (!this.isOpaqueHit(hit)) continue;
           if (hit.distance < bestPreciseDist) {
@@ -117,8 +127,54 @@ export class InteractionManager {
       }
     }
 
-    // Prefer a precise, painted-pixel hit; otherwise the closest generous pad.
+    // Prefer a precise, painted-pixel hit; otherwise the closest generous piece.
     return bestPrecise ?? bestGenerous;
+  }
+
+  /**
+   * Project a target's drawn artwork (its cutout meshes, ignoring the invisible
+   * hit pad and shadow) into normalised screen space and store the enclosing
+   * box in `this.screenBox`. Returns false if the target has no art meshes.
+   */
+  private artScreenBox(object: THREE.Object3D): boolean {
+    let found = false;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    object.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      // Only the cutout art meshes carry a `render` hook; pads/shadows don't.
+      if (!mesh.isMesh || !mesh.userData.render || !mesh.geometry) return;
+      const geo = mesh.geometry as THREE.BufferGeometry;
+      if (!geo.boundingBox) geo.computeBoundingBox();
+      const bb = geo.boundingBox;
+      if (!bb) return;
+      mesh.updateWorldMatrix(true, false);
+      for (let xi = 0; xi < 2; xi++) {
+        for (let yi = 0; yi < 2; yi++) {
+          this.corner.set(
+            xi ? bb.max.x : bb.min.x,
+            yi ? bb.max.y : bb.min.y,
+            bb.min.z
+          );
+          this.corner.applyMatrix4(mesh.matrixWorld).project(this.camera);
+          minX = Math.min(minX, this.corner.x);
+          minY = Math.min(minY, this.corner.y);
+          maxX = Math.max(maxX, this.corner.x);
+          maxY = Math.max(maxY, this.corner.y);
+          found = true;
+        }
+      }
+    });
+
+    if (!found) return false;
+    this.screenBox.minX = minX;
+    this.screenBox.minY = minY;
+    this.screenBox.maxX = maxX;
+    this.screenBox.maxY = maxY;
+    return true;
   }
 
   /** True if the ray hit a painted pixel of the cutout (not transparent paper). */
