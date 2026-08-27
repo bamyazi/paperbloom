@@ -38,6 +38,8 @@ export class InteractionManager {
   private pointerDownId = -1;
   // Optional on-screen tap diagnostics, enabled with `?debug` in the URL.
   private readonly debugEl: HTMLElement | null;
+  private debugCanvas: HTMLCanvasElement | null = null;
+  private lastTapPx: { x: number; y: number } | null = null;
 
   constructor(
     private readonly camera: THREE.Camera,
@@ -53,6 +55,16 @@ export class InteractionManager {
     if (typeof location === "undefined" || !new URLSearchParams(location.search).has("debug")) {
       return null;
     }
+    const canvas = document.createElement("canvas");
+    Object.assign(canvas.style, {
+      position: "fixed",
+      inset: "0",
+      zIndex: "199",
+      pointerEvents: "none"
+    } satisfies Partial<CSSStyleDeclaration>);
+    document.body.appendChild(canvas);
+    this.debugCanvas = canvas;
+
     const el = document.createElement("pre");
     Object.assign(el.style, {
       position: "fixed",
@@ -103,6 +115,7 @@ export class InteractionManager {
     const rect = this.domElement.getBoundingClientRect();
     this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    if (this.debugCanvas) this.lastTapPx = { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
 
   private pick(): Hotspot | null {
@@ -229,5 +242,59 @@ export class InteractionManager {
       lines.push(`#${i} gen:${h.generous ? 1 : 0} hits:${hits.length} [${kinds}]`);
     });
     this.debugEl.textContent = lines.join("\n");
+    this.drawDebugMarkers();
+  }
+
+  /** Draw the tap point (red cross) and each piece's true 3D plane (green). */
+  private drawDebugMarkers(): void {
+    const canvas = this.debugCanvas;
+    if (!canvas) return;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    if (canvas.width !== W) canvas.width = W;
+    if (canvas.height !== H) canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, W, H);
+
+    const toPx = (v: THREE.Vector3): [number, number] => {
+      v.project(this.camera);
+      return [(v.x * 0.5 + 0.5) * W, (-v.y * 0.5 + 0.5) * H];
+    };
+
+    for (const h of this.hotspots) {
+      h.object.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (!mesh.isMesh || !mesh.userData.render || !mesh.geometry) return;
+        const geo = mesh.geometry as THREE.BufferGeometry;
+        if (!geo.boundingBox) geo.computeBoundingBox();
+        const bb = geo.boundingBox;
+        if (!bb) return;
+        mesh.updateWorldMatrix(true, false);
+        const pts: [number, number][] = [];
+        for (const [x, y] of [[bb.min.x, bb.min.y], [bb.max.x, bb.min.y], [bb.max.x, bb.max.y], [bb.min.x, bb.max.y]] as const) {
+          const v = new THREE.Vector3(x, y, 0).applyMatrix4(mesh.matrixWorld);
+          pts.push(toPx(v));
+        }
+        ctx.strokeStyle = "rgba(0,180,0,0.9)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        pts.forEach(([px, py], k) => (k ? ctx.lineTo(px, py) : ctx.moveTo(px, py)));
+        ctx.closePath();
+        ctx.stroke();
+      });
+    }
+
+    if (this.lastTapPx) {
+      const { x, y } = this.lastTapPx;
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 16, y);
+      ctx.lineTo(x + 16, y);
+      ctx.moveTo(x, y - 16);
+      ctx.lineTo(x, y + 16);
+      ctx.stroke();
+    }
   }
 }
