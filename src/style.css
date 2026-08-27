@@ -221,12 +221,12 @@ body {
   }
 }
 
-/* Portrait is the intended orientation — nudge phones out of landscape. */
+/* Landscape is the intended orientation — nudge phones out of portrait. */
 #rotate-hint {
   display: none;
 }
 
-@media (orientation: landscape) and (max-height: 540px) {
+@media (orientation: portrait) and (max-width: 540px) {
   #rotate-hint {
     position: fixed;
     inset: 0;
