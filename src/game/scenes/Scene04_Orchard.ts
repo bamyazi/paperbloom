@@ -170,6 +170,7 @@ export class Scene04Orchard extends StoryScene {
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
+      guidance: this.ctx.guidance,
       targets: this.colorTargets,
       onColor: (remaining) => {
         if (remaining > 0) this.ctx.hud.showCaption("Yum! Colour the rest too!", 0);

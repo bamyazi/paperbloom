@@ -178,6 +178,7 @@ export class Scene06Sky extends StoryScene {
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
+      guidance: this.ctx.guidance,
       targets: this.colorTargets,
       onColor: (remaining) => {
         if (remaining > 0) this.ctx.hud.showCaption("Beautiful! Keep colouring the sky!", 0);

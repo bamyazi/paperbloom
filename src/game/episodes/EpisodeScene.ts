@@ -54,6 +54,7 @@ export class EpisodeScene extends StoryScene {
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
+      guidance: this.ctx.guidance,
       targets: this.targets,
       onColor: (remaining) => {
         if (remaining > 0) this.ctx.hud.showCaption(this.definition.progress, 0, this.definition.voice);

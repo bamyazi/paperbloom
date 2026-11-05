@@ -7,8 +7,8 @@ export const BUSY_BEES: EpisodeDefinition = {
   setting: "meadow",
   voice: "bee",
   opening: "Mabli heard a little buzz in the meadow. Some bees needed her help.",
-  prompt: "Bzz! Can you make us golden again? Tap each bee.",
-  progress: "Bzz-bzz! My friends need gold too!",
+  prompt: "Buzz! Can you make us golden again? Tap each bee.",
+  progress: "Buzz, buzz! My friends need gold too!",
   ending: "Thank you, Mabli! Now our meadow is buzzing with colour!",
   targets: [-2.4, -0.8, 0.8, 2.4].map((x, index) => ({
     element: BEE,

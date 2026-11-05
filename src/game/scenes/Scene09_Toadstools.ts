@@ -162,6 +162,7 @@ export class Scene09Toadstools extends StoryScene {
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
+      guidance: this.ctx.guidance,
       targets: this.colorTargets,
       onColor: (remaining) => {
         if (remaining > 0) this.ctx.hud.showCaption("Lovely and red! Colour the others too.", 0);

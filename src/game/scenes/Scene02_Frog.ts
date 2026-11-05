@@ -184,6 +184,7 @@ export class Scene02Frog extends StoryScene {
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
+      guidance: this.ctx.guidance,
       targets: this.colorTargets,
       onComplete: () => {
         this.ctx.hud.showCaption("“Ribbit-ribbit! I'm green again! Thank you, Mabli!”", 0, "frog");

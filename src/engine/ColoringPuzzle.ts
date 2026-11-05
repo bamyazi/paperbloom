@@ -2,6 +2,7 @@ import type { InteractionManager } from "./Interaction.ts";
 import type { Popup } from "./Popup.ts";
 import type { SoundEngine } from "./SoundEngine.ts";
 import type { CountingLesson } from "./learning/CountingLesson.ts";
+import type { TapGuidance } from "./guidance/TapGuidance.ts";
 
 export interface ColorTarget {
   /** The element to colour when tapped. */
@@ -18,6 +19,8 @@ export interface ColoringPuzzleOptions {
   sound?: SoundEngine;
   /** Optional spoken number lesson shared by all multi-target puzzles. */
   counting?: CountingLesson;
+  /** Patient reminders while this puzzle has uncoloured targets. */
+  guidance?: TapGuidance;
   /** Fired after each successful colouring, with how many are left. */
   onColor?: (remaining: number, total: number) => void;
   /** Fired once every target has been coloured. */
@@ -39,6 +42,7 @@ export class ColoringPuzzle {
   constructor(private readonly options: ColoringPuzzleOptions) {
     this.remaining = options.targets.length;
     options.counting?.start(this.remaining);
+    options.guidance?.start(options.targets.map((target) => target.popup));
     for (const target of options.targets) {
       // A CSS-pixel margin keeps taps forgiving without overlapping distant
       // targets with large invisible hit volumes.
@@ -60,6 +64,7 @@ export class ColoringPuzzle {
 
     this.remaining--;
     const total = this.options.targets.length;
+    this.options.guidance?.progress(target.popup);
     this.options.counting?.advance();
     this.options.sound?.chime(total - this.remaining - 1);
     this.options.onColor?.(this.remaining, total);

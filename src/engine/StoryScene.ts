@@ -13,6 +13,7 @@ import {
 } from "./SceneTimings.ts";
 import { ChapterCelebration } from "./celebration/ChapterCelebration.ts";
 import { startGirlCheer } from "../game/art/Figures.ts";
+import type { TapGuidance } from "./guidance/TapGuidance.ts";
 
 /** Shared services handed to every scene when it becomes active. */
 export interface SceneContext {
@@ -22,6 +23,7 @@ export interface SceneContext {
   hud: Hud;
   narrator: Narrator;
   sound: SoundEngine;
+  guidance?: TapGuidance;
 }
 
 interface TriggeredPopup {
@@ -67,6 +69,7 @@ export abstract class StoryScene {
   enter(ctx: SceneContext): void {
     this.ctx = ctx;
     this.ctx.hud.counting?.reset();
+    this.ctx.guidance?.reset();
     ctx.scene.add(this.root);
     this.setup();
   }
@@ -162,6 +165,7 @@ export abstract class StoryScene {
   }
 
   exit(): void {
+    this.ctx.guidance?.reset();
     this.ctx.hud.counting?.reset();
     this.completionNotified = true;
     this.ctx.interaction.clear();

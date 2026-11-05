@@ -13,30 +13,30 @@
     "sha256": "62461c925a1574bfe1c488d037d02ba1b395250c98d16546a8f67f017db79dfb"
   },
   {
-    "id": "bee-cea3f040551a",
+    "id": "bee-ea722d86dedc",
     "speaker": "bee",
-    "text": "Bzz! Can you make us golden again? Tap each bee.",
+    "text": "Buzz! Can you make us golden again? Tap each bee.",
     "voice": "am_puck",
     "speed": 0.96,
     "language": "en-us",
-    "file": "bee-cea3f040551a.wav",
-    "seconds": 3.293,
+    "file": "bee-ea722d86dedc.wav",
+    "seconds": 2.865,
     "sample_rate": 24000,
-    "gain": 0.91584,
-    "sha256": "bd950f1573fc82ff2355d01da15df2ea19379081507a65ce69ba8d6b6cab9036"
+    "gain": 0.93785,
+    "sha256": "1ab02dabb47215884d7240a9e54b96a51ecd50d1d5b9df0afc3115512715a60a"
   },
   {
-    "id": "bee-e721d5cd13a1",
+    "id": "bee-0445ab4cad75",
     "speaker": "bee",
-    "text": "Bzz-bzz! My friends need gold too!",
+    "text": "Buzz, buzz! My friends need gold too!",
     "voice": "am_puck",
     "speed": 0.96,
     "language": "en-us",
-    "file": "bee-e721d5cd13a1.wav",
-    "seconds": 3.015,
+    "file": "bee-0445ab4cad75.wav",
+    "seconds": 2.245,
     "sample_rate": 24000,
-    "gain": 0.92482,
-    "sha256": "e8b01ac3814f55b8fb48539b062e6517df8153f76185893d81ded155cbd0fee6"
+    "gain": 0.91552,
+    "sha256": "33e6b8b7a9bb416b378e04d0e07295b99c8631cbcd07b3088c55a4e1a23b7cc8"
   },
   {
     "id": "bee-3769960bf85e",
@@ -661,6 +661,32 @@
     "sample_rate": 24000,
     "gain": 1.17684,
     "sha256": "5a7e09a8563077f4a367e7010d98ea4fd97fa7696e1c401f21ff69a3cf615572"
+  },
+  {
+    "id": "narrator-55b218b4fc39",
+    "speaker": "narrator",
+    "text": "Can you tap one? Let's give it some colour!",
+    "voice": "bf_emma",
+    "speed": 0.9,
+    "language": "en-gb",
+    "file": "narrator-55b218b4fc39.wav",
+    "seconds": 2.421,
+    "sample_rate": 24000,
+    "gain": 1.11887,
+    "sha256": "514f16005df48f3a1c84ce8eb89fe3f889105a519c85d313611ebc21736ce95e"
+  },
+  {
+    "id": "narrator-ff2a2af91151",
+    "speaker": "narrator",
+    "text": "Tap the one with the twinkly light. You can do it!",
+    "voice": "bf_emma",
+    "speed": 0.9,
+    "language": "en-gb",
+    "file": "narrator-ff2a2af91151.wav",
+    "seconds": 3.161,
+    "sample_rate": 24000,
+    "gain": 1.19415,
+    "sha256": "a6e7d1d1d189047ed933bead0380ec62b4fe73d5ac1c9e5fd42cc26dcf95a263"
   },
   {
     "id": "narrator-8dfb9d3d35ad",

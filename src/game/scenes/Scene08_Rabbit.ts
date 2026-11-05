@@ -162,6 +162,7 @@ export class Scene08Rabbit extends StoryScene {
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
+      guidance: this.ctx.guidance,
       targets: this.colorTargets,
       onComplete: () => {
         this.ctx.hud.showCaption("“My fur feels warm again. Thank you, Mabli!”", 0, "rabbit");

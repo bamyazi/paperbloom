@@ -19,6 +19,13 @@ object adds one to a large number and its row of dots. The narrator counts
 aloud, then the character's closing line finishes before the page turns.
 Tapping the same object again does not add another count.
 
+If the child pauses, the book waits eight quiet seconds after the instructions
+or counting finish, then gently prompts and marks one remaining shape with a
+gold halo and pointing finger. A second reminder follows after twelve more
+quiet seconds. It speaks at most twice per pause; the marker stays until a new
+shape is coloured. Successful taps dismiss help before the next number starts.
+Hidden tabs and portrait rotation pause help and restore a fresh grace period.
+
 The story: a young girl whose hair holds every colour must bring colour back to a
 world that has faded to ink and cream. Her rainbow hair is the only colour
 anywhere in the world.
@@ -148,6 +155,7 @@ src/
     Narrator.ts             Recorded story lines, queue and browser speech fallback
     narration/              WAV lookup, audio lifecycle and fallback character voices
     learning/               Counting progress and ordered number narration
+    guidance/               Quiet-time hint timing, eligible targets and dismissal
     SoundEngine.ts          Synthesised effects and ambient music
     Transition.ts           Page-turn overlay
     transition/             Curved paper leaf, animation and cancellation lifecycle
@@ -156,6 +164,7 @@ src/
     audio/                  Generated text/speaker catalogue for recorded WAVs
     learning/               Counting display and visual number feedback
     presentation/           Static illustrated book cover
+                            Target-following hint halo and CSS-pixel projection
     story/
       StoryChapters.ts      createStoryChapters catalog, chapter IDs and order
     elements.ts             Reusable prop definitions, colours and fold timings
@@ -224,3 +233,18 @@ encouragement as text and queues the closing dialogue after the final number.
 `Narrator.isSpeaking` includes pending lines, so chapter completion waits for
 both the lesson and the closing dialogue. `main.ts` composes the display with
 the engine through the small `CountingView` interface.
+
+### Changing idle help
+
+`engine/guidance/TapGuidance.ts` owns the quiet delays and per-pause reminder
+limit. `game/story/TapHints.ts` owns the two recorded hint lines. A puzzle starts
+guidance with its target list and reports each successful tap before counting;
+`StoryScene` resets it on entry and exit. The main game loop updates it only
+while the book is visible and ready to play, waiting whenever narration is busy.
+
+`game/presentation/TapHintDisplay.ts` follows one remaining target. Its projection
+module uses the current camera and displayed canvas rectangle, so density,
+rotation and character motion cannot move the halo away from the artwork.
+The halo is pointer-transparent and does not change picking. `Hud.showTapHint`
+and the cancellation handle returned by `Narrator.speak` dismiss only the owned
+hint, preserving any newer caption, counted number or closing dialogue.

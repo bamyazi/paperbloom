@@ -23,6 +23,8 @@ import {
 const CLEARING_Z = -13;
 const CAMERA_TRAVEL = 8;
 const HOLD_TIME = 5.2;
+// The flock asks for blue feathers, so every bird shares the same colour.
+const BIRD_BLUE = "#4a90d9";
 
 /**
  * Scene 07 — "The Little Birds"
@@ -132,16 +134,11 @@ export class Scene07Bird extends StoryScene {
 
   /** Three little birds on rock perches — a small flock of colour targets. */
   private buildBird(): void {
-    const birds = [
-      { x: -1.7, color: "#4a90d9" }, // bluebird
-      { x: 0.0, color: "#e2703a" }, // robin
-      { x: 1.7, color: "#f4c20d" } // goldfinch
-    ];
-    for (const b of birds) {
-      this.place(buildElement(ROCK, { scale: 1.4 }), b.x, -11.0, 1.2);
-      const bird = this.place(buildElement(BIRD, { scale: 1.0 }), b.x, -11.0, 1.5);
+    for (const x of [-1.7, 0, 1.7]) {
+      this.place(buildElement(ROCK, { scale: 1.4 }), x, -11.0, 1.2);
+      const bird = this.place(buildElement(BIRD, { scale: 1.0 }), x, -11.0, 1.5);
       bird.root.position.y = 0.5; // perch it on top of the rock
-      this.colorTargets.push({ popup: bird, color: b.color });
+      this.colorTargets.push({ popup: bird, color: BIRD_BLUE });
     }
   }
 
@@ -167,6 +164,7 @@ export class Scene07Bird extends StoryScene {
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
+      guidance: this.ctx.guidance,
       targets: this.colorTargets,
       onColor: (remaining) => {
         if (remaining > 0) this.ctx.hud.showCaption("“Tweet-tweet! Help my friends too!”", 0, "bird");

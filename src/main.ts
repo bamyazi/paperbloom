@@ -4,9 +4,14 @@ import { createStoryChapters } from "./game/story/StoryChapters.ts";
 import { NARRATION_CLIPS } from "./game/audio/narrationClips.ts";
 import { addBookCover } from "./game/presentation/BookCover.ts";
 import { CountingDisplay } from "./game/learning/CountingDisplay.ts";
+import { TapHintDisplay } from "./game/presentation/TapHintDisplay.ts";
+import { TAP_HINTS } from "./game/story/TapHints.ts";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
-const game = new Game(canvas, NARRATION_CLIPS, new CountingDisplay());
+const game = new Game(canvas, NARRATION_CLIPS, new CountingDisplay(), {
+  hints: TAP_HINTS,
+  createView: (camera) => new TapHintDisplay(camera, canvas)
+});
 addBookCover(document.getElementById("title-card")!);
 
 const chapters = createStoryChapters();

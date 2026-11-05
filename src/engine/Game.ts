@@ -6,6 +6,8 @@ import { RecordedNarration } from "./narration/RecordedNarration.ts";
 import type { NarrationClipMap } from "./narration/RecordedNarration.ts";
 import { CountingLesson } from "./learning/CountingLesson.ts";
 import type { CountingView } from "./learning/CountingLesson.ts";
+import { TapGuidance } from "./guidance/TapGuidance.ts";
+import type { TapHint, TapHintView } from "./guidance/TapGuidance.ts";
 import { SoundEngine } from "./SoundEngine.ts";
 import { SceneManager } from "./SceneManager.ts";
 import { Transition } from "./Transition.ts";
@@ -19,6 +21,11 @@ const PAPER_BACKGROUND = new THREE.Color("#efe9d8");
 const DESIGN_VFOV = 72;
 const DESIGN_ASPECT = 1.6;
 const MAX_VFOV = 120;
+
+export interface TapGuidancePresentation {
+  hints: readonly TapHint[];
+  createView: (camera: THREE.Camera) => TapHintView;
+}
 
 /**
  * A soft vertical gradient "sky" for the scene backdrop — a warm cream that
@@ -57,13 +64,19 @@ export class Game {
   readonly narrator: Narrator;
   readonly sound: SoundEngine;
   readonly scenes: SceneManager;
+  readonly guidance?: TapGuidance;
 
   private readonly clock = new THREE.Clock();
   // The game and its observer share the lifetime of this page.
   private readonly viewportObserver: ResizeObserver;
   private running = false;
 
-  constructor(canvas: HTMLCanvasElement, narrationClips: NarrationClipMap = {}, countingView?: CountingView) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    narrationClips: NarrationClipMap = {},
+    countingView?: CountingView,
+    tapHelp?: TapGuidancePresentation
+  ) {
     // Phones have weak GPUs but very high pixel densities; antialiasing and a
     // 2x+ pixel ratio there flood the fill rate and drop the frame rate, which
     // in turn slows the dt-driven animation clock. Trim both on mobile.
@@ -95,6 +108,19 @@ export class Game {
     this.narrator = new Narrator(undefined, new RecordedNarration(narrationClips));
     this.sound = new SoundEngine();
     this.hud = new Hud(this.narrator, new CountingLesson(this.narrator, countingView));
+    if (tapHelp) {
+      this.guidance = new TapGuidance({
+        hints: tapHelp.hints,
+        view: tapHelp.createView(this.camera),
+        isNarrating: () => this.narrator.isSpeaking,
+        showHint: (hint) => this.hud.showTapHint(hint.text, hint.speaker)
+      });
+      // The page owns this listener. Backgrounding must stop an owned hint
+      // immediately, even when requestAnimationFrame is suspended by Android.
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) this.guidance?.update(0, false);
+      });
+    }
 
     const context: SceneContext = {
       scene: this.scene,
@@ -102,7 +128,8 @@ export class Game {
       interaction: this.interaction,
       hud: this.hud,
       narrator: this.narrator,
-      sound: this.sound
+      sound: this.sound,
+      guidance: this.guidance
     };
     this.scenes = new SceneManager(context, new Transition());
 
@@ -127,6 +154,9 @@ export class Game {
     const dt = Math.min(this.clock.getDelta(), 0.1);
     this.narrator.update();
     this.scenes.update(dt);
+    const bookVisible = !document.hidden &&
+      !window.matchMedia("(orientation: portrait) and (max-width: 540px)").matches;
+    this.guidance?.update(dt, bookVisible);
     this.hud.update(dt);
     this.renderer.render(this.scene, this.camera);
   };

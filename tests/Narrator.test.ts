@@ -251,3 +251,53 @@ test("a stuck speech line releases the next queued number without clearing or cr
   assert.deepEqual(speech.utterances.map((line) => line.text), ["One.", "Two."]);
   assert.equal(narrator.isSpeaking, true);
 });
+
+test("an owned hint can be dismissed without interrupting a later number or its queue", (context) => {
+  const { narrator, speech } = createFixture(context);
+  const stopHint = narrator.speak("Try tapping this one.");
+  stopHint();
+  assert.equal(narrator.isSpeaking, false);
+  narrator.enqueue("One.");
+  narrator.enqueue("Two.");
+  stopHint();
+  assert.equal(narrator.isSpeaking, true);
+  speech.utterances.at(-1)?.onend?.();
+  narrator.update();
+  assert.equal(speech.utterances.at(-1)?.text, "Two.");
+});
+
+test("idle hint captions can speak after a count and cannot hide a newer caption", (context) => {
+  const { narrator, speech } = createFixture(context);
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  const visible = new Set<string>();
+  const caption = {
+    textContent: "",
+    classList: {
+      add: (name: string) => { visible.add(name); },
+      remove: (name: string) => { visible.delete(name); }
+    }
+  };
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: { getElementById: () => caption }
+  });
+  context.after(() => {
+    if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
+    else Reflect.deleteProperty(globalThis, "document");
+  });
+  const lesson = new CountingLesson(narrator);
+  const hud = new Hud(narrator, lesson);
+  lesson.start(3);
+  lesson.advance();
+  speech.utterances.at(-1)?.onend?.();
+  const stopHint = hud.showTapHint("Can you tap one?");
+  assert.equal(speech.utterances.at(-1)?.text, "Can you tap one?");
+  stopHint();
+  lesson.advance();
+  hud.showCaption("One more little friend!");
+  stopHint();
+  assert.equal(caption.textContent, "One more little friend!");
+  assert.equal(visible.has("visible"), true);
+  assert.equal(speech.utterances.at(-1)?.text, "Two.");
+  assert.equal(narrator.isSpeaking, true);
+});

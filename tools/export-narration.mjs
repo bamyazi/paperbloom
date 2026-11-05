@@ -33,6 +33,10 @@ function visit(node) {
     const fields = new Map(node.properties
       .filter(ts.isPropertyAssignment)
       .map((property) => [property.name.getText().replaceAll('"', ""), literal(property.initializer)]));
+    // Authored hint lines carry their own speaker alongside the shared copy.
+    if (fields.has("text") && fields.has("speaker")) {
+      add(fields.get("text"), fields.get("speaker") ?? "narrator");
+    }
     if (fields.has("opening") && fields.has("prompt") && fields.has("ending")) {
       add(fields.get("opening"));
       const speaker = fields.get("voice") ?? "narrator";

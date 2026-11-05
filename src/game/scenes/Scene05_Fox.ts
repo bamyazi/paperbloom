@@ -162,6 +162,7 @@ export class Scene05Fox extends StoryScene {
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
+      guidance: this.ctx.guidance,
       targets: this.colorTargets,
       onComplete: () => {
         this.ctx.hud.showCaption("“Oh, my orange coat! Thank you, Mabli!”", 0, "fox");

@@ -17,6 +17,7 @@ export class Hud {
   private readonly endTitle: HTMLElement;
   private readonly endSubtitle: HTMLElement;
   private captionTimer = 0;
+  private captionGeneration = 0;
 
   constructor(
     private readonly narrator?: Narrator,
@@ -46,9 +47,7 @@ export class Hud {
 
   /** Show a caption, read it aloud, and (if `seconds` given) auto-hide it. */
   showCaption(text: string, seconds = 0, speaker: StoryVoice = "narrator"): void {
-    this.caption.textContent = text;
-    this.caption.classList.add("visible");
-    this.captionTimer = seconds > 0 ? seconds : 0;
+    this.presentCaption(text, seconds);
     if (this.counting.hasCounted) {
       // Progress remains visible without interrupting the numbers. The final
       // dialogue follows the last number and participates in the usual gate.
@@ -56,6 +55,24 @@ export class Hud {
     } else {
       this.narrator?.speak(text, speaker);
     }
+  }
+
+  /** Idle help may speak after counting starts, once all number audio is quiet. */
+  showTapHint(text: string, speaker: StoryVoice = "narrator"): () => void {
+    this.presentCaption(text, 0);
+    const generation = this.captionGeneration;
+    const stopSpeaking = this.narrator?.speak(text, speaker);
+    return () => {
+      stopSpeaking?.();
+      if (generation === this.captionGeneration) this.hideCaption();
+    };
+  }
+
+  private presentCaption(text: string, seconds: number): void {
+    this.captionGeneration++;
+    this.caption.textContent = text;
+    this.caption.classList.add("visible");
+    this.captionTimer = seconds > 0 ? seconds : 0;
   }
 
   hideCaption(): void {

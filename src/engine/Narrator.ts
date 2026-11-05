@@ -90,10 +90,15 @@ export class Narrator {
   }
 
   /** Speak a line, interrupting any line currently being read. */
-  speak(text: string, speaker: StoryVoice = "narrator"): void {
-    if (!this.enabled || !text.trim()) return;
+  speak(text: string, speaker: StoryVoice = "narrator"): () => void {
+    if (!this.enabled || !text.trim()) return () => {};
     this.queue.clear();
     this.startLine(text, speaker);
+    const generation = this.generation;
+    // An optional owner can dismiss this line without stopping a successor.
+    return () => {
+      if (generation === this.generation) this.cancel();
+    };
   }
 
   enqueue(text: string, speaker: StoryVoice = "narrator"): void {
