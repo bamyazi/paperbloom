@@ -34,6 +34,8 @@ anywhere in the world.
 
 [Open Paper Bloom](https://bamyazi.github.io/paperbloom/) in a browser with WebGL
 support, then select **Open the book**. On a phone, play in landscape orientation.
+At the end, the large **AGAIN** button turns back to the first chapter for a
+fresh reading, with counting and hints reset.
 
 ## Art style
 
@@ -248,3 +250,13 @@ rotation and character motion cannot move the halo away from the artwork.
 The halo is pointer-transparent and does not change picking. `Hud.showTapHint`
 and the cancellation handle returned by `Narrator.speak` dismiss only the owned
 hint, preserving any newer caption, counted number or closing dialogue.
+
+### Restarting the book
+
+The end card in `index.html` owns the **AGAIN** button. `Hud.onRestart` hides and
+disables the card immediately, cancels closing narration and clears the count.
+`main.ts` opens a fresh chapter-zero scene through the normal page turn, reusing
+the existing renderer, audio and mute settings. `Scene06Sky.exit` restores its
+borrowed fog/background colours so its finale tint cannot leak into a new book.
+The end card is inert while hidden and `showEndCard` re-arms the button for every
+subsequent reading.

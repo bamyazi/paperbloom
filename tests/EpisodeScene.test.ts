@@ -130,6 +130,8 @@ function createFixture(episode: StoryScene, viewport: ViewportSize) {
   canvas.height = viewport.height * 3;
   const camera = new THREE.PerspectiveCamera(72, viewport.width / viewport.height, 0.1, 200);
   const world = new THREE.Scene();
+  world.fog = new THREE.Fog("#efe9d8", 18, 40);
+  world.background = new THREE.Color("#efe9d8");
   const interaction = new ObservedInteraction(camera, canvas as unknown as HTMLElement);
   const captions: string[] = [];
   const endings: string[] = [];
@@ -393,4 +395,20 @@ test("the sky end card shares the narration gate before speaking its own ending"
   for (let frame = 0; frame < 20; frame += 1) fixture.episode.update(0.1);
   assert.deepEqual(fixture.endings, ["The End"]);
   assert.equal(fixture.completions(), 1);
+});
+
+test("leaving the finale restores its borrowed atmosphere for a fresh reading", (context) => {
+  const fixture = createFixture(new Scene06Sky(), { width: 844, height: 390 });
+  context.after(() => fixture.interaction.dispose());
+  const fogBefore = fixture.world.fog!.color.clone();
+  const backgroundBefore = (fixture.world.background as THREE.Color).clone();
+  finishPuzzle(fixture);
+  for (let frame = 0; frame < 20; frame++) fixture.episode.update(0.1);
+  assert.equal(fixture.world.fog!.color.equals(fogBefore), false);
+  assert.equal((fixture.world.background as THREE.Color).equals(backgroundBefore), false);
+  fixture.episode.exit();
+  assert.equal(fixture.world.fog!.color.equals(fogBefore), true);
+  assert.equal((fixture.world.background as THREE.Color).equals(backgroundBefore), true);
+  assert.equal(fixture.narrator.isSpeaking, false);
+  assert.equal(fixture.interaction.active.length, 0);
 });

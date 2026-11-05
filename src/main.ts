@@ -41,3 +41,9 @@ const firstChapterIndex = Math.max(0, chapters.findIndex((chapter) => chapter.id
 game.hud.onStart(() => {
   openChapter(firstChapterIndex);
 });
+
+game.hud.onRestart(() => {
+  game.sound.resume();
+  // A new scene factory resets every puzzle, including when testing the finale.
+  openChapter(0, true);
+});

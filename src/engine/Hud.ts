@@ -16,6 +16,7 @@ export class Hud {
   private readonly endCard: HTMLElement;
   private readonly endTitle: HTMLElement;
   private readonly endSubtitle: HTMLElement;
+  private readonly restartButton: HTMLButtonElement;
   private captionTimer = 0;
   private captionGeneration = 0;
 
@@ -29,6 +30,24 @@ export class Hud {
     this.endCard = document.getElementById("end-card")!;
     this.endTitle = document.getElementById("end-title")!;
     this.endSubtitle = document.getElementById("end-subtitle")!;
+    this.restartButton = document.getElementById("restart-button") as HTMLButtonElement;
+    this.endCard.inert = true;
+    this.restartButton.disabled = true;
+  }
+
+  /** Reusable across readings; hide and disable immediately to absorb double taps. */
+  onRestart(callback: () => void): void {
+    this.restartButton.addEventListener("click", () => {
+      if (this.restartButton.disabled || !this.endCard.classList.contains("visible")) return;
+      this.restartButton.disabled = true;
+      this.endCard.inert = true;
+      this.endCard.classList.remove("visible");
+      this.captionGeneration++;
+      this.hideCaption();
+      this.counting.reset();
+      this.narrator?.cancel();
+      callback();
+    });
   }
 
   onStart(callback: () => void): void {
@@ -85,6 +104,8 @@ export class Hud {
     this.hideCaption();
     this.endTitle.textContent = title;
     this.endSubtitle.textContent = subtitle;
+    this.endCard.inert = false;
+    this.restartButton.disabled = false;
     this.endCard.classList.add("visible");
     this.narrator?.speak(`${title}. ${subtitle}`);
   }

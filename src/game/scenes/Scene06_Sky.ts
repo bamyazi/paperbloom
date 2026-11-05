@@ -37,9 +37,15 @@ export class Scene06Sky extends StoryScene {
   private endingShown = false;
   private readonly colorTargets: ColorTarget[] = [];
   private readonly warmTarget = new THREE.Color("#f7ecd2");
+  private originalFogColor?: THREE.Color;
+  private originalBackgroundColor?: THREE.Color;
   private seed = 0x5c1b7a01;
 
   protected setup(): void {
+    // The finale borrows the shared atmosphere and restores it for another reading.
+    this.originalFogColor = this.ctx.scene.fog?.color.clone();
+    const background = this.ctx.scene.background;
+    if (background instanceof THREE.Color) this.originalBackgroundColor = background.clone();
     this.rig = new CameraRig(this.ctx.camera, {
       speed: 1.6,
       length: CAMERA_TRAVEL,
@@ -56,6 +62,15 @@ export class Scene06Sky extends StoryScene {
     this.buildGirl();
 
     this.ctx.hud.showCaption("At last Mabli climbed a hill beneath a wide, grey sky…", 5);
+  }
+
+  override exit(): void {
+    if (this.originalFogColor) this.ctx.scene.fog?.color.copy(this.originalFogColor);
+    const background = this.ctx.scene.background;
+    if (this.originalBackgroundColor && background instanceof THREE.Color) {
+      background.copy(this.originalBackgroundColor);
+    }
+    super.exit();
   }
 
   private random(): number {
