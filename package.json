@@ -6,6 +6,7 @@
   "description": "A stylised first-person pop-up storybook game about a girl bringing colour back to a black-and-white world.",
   "scripts": {
     "test": "node --experimental-transform-types --test tests/*.test.ts",
+    "check:voices": "node tools/voice_generation/verify.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview"

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Narrator } from "../src/engine/Narrator.ts";
+import { AudioPlayback } from "../src/engine/narration/AudioPlayback.ts";
+import { narrationKey, RecordedNarration } from "../src/engine/narration/RecordedNarration.ts";
+import { Hud } from "../src/engine/Hud.ts";
+import { CountingLesson } from "../src/engine/learning/CountingLesson.ts";
 
 class FakeUtterance {
   voice: unknown = null;
@@ -38,7 +42,7 @@ class FakeSpeech extends EventTarget {
   }
 }
 
-function createFixture(context: { after(callback: () => void): void }, withSpeech = true) {
+function createFixture(context: { after(callback: () => void): void }, withSpeech = true, recorded?: RecordedNarration) {
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
   const previousUtterance = Object.getOwnPropertyDescriptor(globalThis, "SpeechSynthesisUtterance");
   const speech = new FakeSpeech();
@@ -57,7 +61,7 @@ function createFixture(context: { after(callback: () => void): void }, withSpeec
     else Reflect.deleteProperty(globalThis, "SpeechSynthesisUtterance");
   });
   const clock = { now: 0 };
-  const narrator = new Narrator(() => clock.now);
+  const narrator = new Narrator(() => clock.now, recorded);
   return { narrator, speech, clock };
 }
 
@@ -161,4 +165,89 @@ test("a rejected platform voice does not throw or keep the story waiting", (cont
   speech.throwOnSpeak = true;
   assert.doesNotThrow(() => narrator.speak("The voice service is unavailable."));
   assert.equal(narrator.isSpeaking, false);
+});
+
+test("a recorded character line takes priority and file failure uses its speech profile", (context) => {
+  const audio = {
+    src: "", preload: "", ended: false,
+    onended: null as (() => void) | null,
+    onerror: null as (() => void) | null,
+    onplaying: null as (() => void) | null,
+    play: () => new Promise<void>(() => {}),
+    pause() {}, load() {}, removeAttribute() {}
+  };
+  const recorded = new RecordedNarration({
+    [narrationKey("Ribbit!", "frog")]: "audio/narration/frog.wav"
+  }, new AudioPlayback(() => audio as unknown as HTMLAudioElement));
+  const { narrator, speech } = createFixture(context, true, recorded);
+  narrator.speak("Ribbit!", "frog");
+  assert.equal(narrator.isSpeaking, true);
+  assert.equal(speech.utterances.length, 0);
+  audio.onerror?.();
+  assert.equal(speech.utterances.length, 1);
+  assert.equal(speech.utterances[0].text, "Ribbit!");
+  assert.ok(speech.utterances[0].pitch < 1);
+  assert.equal(narrator.isSpeaking, true);
+});
+
+test("missing recorded lines use distinct gentle character speech profiles", (context) => {
+  const { narrator, speech } = createFixture(context);
+  narrator.speak("A warm story.");
+  narrator.speak("Tweet!", "bird");
+  narrator.speak("Hello, Mabli.", "snail");
+  assert.ok(speech.utterances[1].pitch > speech.utterances[0].pitch);
+  assert.ok(speech.utterances[2].rate < speech.utterances[0].rate);
+});
+
+test("rapid counting finishes each number before the ending, without voiced progress chatter", (context) => {
+  const { narrator, speech } = createFixture(context);
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: { getElementById: () => ({ textContent: "", classList: { add() {}, remove() {} } }) }
+  });
+  context.after(() => {
+    if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
+    else Reflect.deleteProperty(globalThis, "document");
+  });
+  const lesson = new CountingLesson(narrator);
+  const hud = new Hud(narrator, lesson);
+  hud.showCaption("Tap each bee.");
+  lesson.start(2);
+  lesson.advance();
+  hud.showCaption("Help the other bee too.");
+  lesson.advance();
+  hud.showCaption("Thank you, Mabli!", 0, "bee");
+  assert.deepEqual(speech.utterances.map((line) => line.text), ["Tap each bee.", "One."]);
+  assert.equal(narrator.isSpeaking, true);
+
+  speech.utterances[1].onend?.();
+  narrator.update();
+  assert.equal(speech.utterances.at(-1)?.text, "Two.");
+  speech.utterances[2].onend?.();
+  narrator.update();
+  assert.equal(speech.utterances.at(-1)?.text, "Thank you, Mabli!");
+  speech.utterances[3].onend?.();
+  assert.equal(narrator.isSpeaking, false);
+});
+
+test("regular speech still interrupts and clears queued lesson lines", (context) => {
+  const { narrator, speech } = createFixture(context);
+  narrator.enqueue("One.");
+  narrator.enqueue("Two.");
+  narrator.speak("A new chapter.");
+  speech.utterances.at(-1)?.onend?.();
+  narrator.update();
+  assert.deepEqual(speech.utterances.map((line) => line.text), ["One.", "A new chapter."]);
+  assert.equal(narrator.isSpeaking, false);
+});
+
+test("a stuck speech line releases the next queued number without clearing or crashing", (context) => {
+  const { narrator, speech, clock } = createFixture(context);
+  narrator.enqueue("One.");
+  narrator.enqueue("Two.");
+  clock.now = 5100;
+  assert.doesNotThrow(() => narrator.update());
+  assert.deepEqual(speech.utterances.map((line) => line.text), ["One.", "Two."]);
+  assert.equal(narrator.isSpeaking, true);
 });

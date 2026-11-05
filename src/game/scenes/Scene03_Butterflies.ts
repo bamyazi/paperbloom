@@ -161,22 +161,25 @@ export class Scene03Butterflies extends StoryScene {
 
   private startButterflyPuzzle(): void {
     this.ctx.hud.showCaption(
-      "So many butterflies — but they're all grey! Tap each butterfly to colour its wings!",
-      0
+      "Hello, little friend! Our wings have lost their colours. Will you tap each butterfly and help us shine?",
+      0,
+      "butterfly"
     );
     new ColoringPuzzle({
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
+      counting: this.ctx.hud.counting,
       targets: this.colorTargets,
       onColor: (remaining) => {
         if (remaining > 0) {
-          this.ctx.hud.showCaption("Wonderful! Colour the others too!", 0);
+          this.ctx.hud.showCaption("Ooh, lovely! My friends would like colourful wings too!", 0, "butterfly");
         }
       },
       onComplete: () => {
         this.ctx.hud.showCaption(
-          "You did it! The whole meadow is dancing with colour!",
-          0
+          "Thank you! Our wings are bright again. Let's dance across the meadow!",
+          0,
+          "butterfly"
         );
         this.complete();
       }

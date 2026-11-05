@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { clamp } from "./Easing.ts";
 
 export interface CameraRigOptions {
-  /** Forward travel speed in world units per second. */
+  /** Average forward speed; easing preserves a travel duration of length / speed. */
   speed: number;
   /** Total forward distance of the scene, in world units. */
   length: number;
@@ -17,16 +17,17 @@ export interface CameraRigOptions {
 /**
  * Drives the first-person camera. The player never steers. The camera first
  * holds still at the start (`holdTime`) so the scene can pop up around it, then
- * glides forward along -Z into the clearing / puzzle location with a gentle
- * hand-held bob and sway. Scenes can `pause()` it at a focal point and
- * `resume()` afterwards.
+ * glides forward along -Z, gently accelerating and settling into the clearing.
+ * A small hand-held bob and sway keep the page alive. Scenes can `pause()` at a
+ * focal point and `resume()` afterwards.
  */
 export class CameraRig {
   private travelled = 0;
+  private travelTime = 0;
   private paused = false;
   private time = 0;
 
-  private readonly speed: number;
+  private readonly travelDuration: number;
   readonly length: number;
   private readonly holdTime: number;
   private readonly eyeHeight: number;
@@ -36,8 +37,8 @@ export class CameraRig {
     private readonly camera: THREE.PerspectiveCamera,
     options: CameraRigOptions
   ) {
-    this.speed = options.speed;
     this.length = options.length;
+    this.travelDuration = options.length / options.speed;
     this.holdTime = options.holdTime ?? 0;
     this.eyeHeight = options.eyeHeight ?? 1.5;
     this.lookAhead = options.lookAhead ?? 6;
@@ -46,6 +47,7 @@ export class CameraRig {
 
   reset(): void {
     this.travelled = 0;
+    this.travelTime = 0;
     this.time = 0;
     this.paused = false;
     this.apply();
@@ -77,9 +79,16 @@ export class CameraRig {
   }
 
   update(dt: number): void {
-    this.time += dt;
+    const previousTime = this.time;
+    this.time += Math.max(0, dt);
     if (this.isTravelling && !this.paused && this.travelled < this.length) {
-      this.travelled = Math.min(this.length, this.travelled + this.speed * dt);
+      // Count only the part of this frame after the hold. Computing distance
+      // from elapsed travel time keeps the curve independent of frame rate.
+      const travelStep = Math.max(0, this.time - this.holdTime) -
+        Math.max(0, previousTime - this.holdTime);
+      this.travelTime = Math.min(this.travelDuration, this.travelTime + travelStep);
+      const progress = this.travelTime / this.travelDuration;
+      this.travelled = this.length * THREE.MathUtils.smoothstep(progress, 0, 1);
     }
     this.apply();
   }

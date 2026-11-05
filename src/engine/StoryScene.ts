@@ -66,6 +66,7 @@ export abstract class StoryScene {
 
   enter(ctx: SceneContext): void {
     this.ctx = ctx;
+    this.ctx.hud.counting?.reset();
     ctx.scene.add(this.root);
     this.setup();
   }
@@ -161,6 +162,7 @@ export abstract class StoryScene {
   }
 
   exit(): void {
+    this.ctx.hud.counting?.reset();
     this.completionNotified = true;
     this.ctx.interaction.clear();
     this.ctx.narrator.cancel();

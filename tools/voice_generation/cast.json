@@ -1,0 +1,13 @@
+{
+  "narrator": { "voice": "bf_emma", "speed": 0.9 },
+  "mabli": { "voice": "af_heart", "speed": 0.94 },
+  "frog": { "voice": "bm_george", "speed": 0.88 },
+  "fox": { "voice": "bm_fable", "speed": 0.91 },
+  "bird": { "voice": "af_bella", "speed": 0.95 },
+  "rabbit": { "voice": "af_nicole", "speed": 0.93 },
+  "butterfly": { "voice": "bf_isabella", "speed": 0.92 },
+  "bee": { "voice": "am_puck", "speed": 0.96 },
+  "duckling": { "voice": "af_sarah", "speed": 0.94 },
+  "snail": { "voice": "am_michael", "speed": 0.88 },
+  "firefly": { "voice": "af_nova", "speed": 0.93 }
+}

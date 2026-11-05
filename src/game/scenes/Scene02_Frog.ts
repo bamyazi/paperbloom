@@ -176,15 +176,17 @@ export class Scene02Frog extends StoryScene {
 
   private startFrogPuzzle(): void {
     this.ctx.hud.showCaption(
-      "“Ribbit… hello! I’m a little frog, but I’ve lost all my green. Can you find me and tap me to colour me in?”",
-      0
+      "“Ribbit! I lost my green. Can you tap me and make me green again?”",
+      0,
+      "frog"
     );
     new ColoringPuzzle({
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
+      counting: this.ctx.hud.counting,
       targets: this.colorTargets,
       onComplete: () => {
-        this.ctx.hud.showCaption("“Ribbit-ribbit! I’m green again! Thank you!”", 0);
+        this.ctx.hud.showCaption("“Ribbit-ribbit! I'm green again! Thank you, Mabli!”", 0, "frog");
         this.complete();
       }
     });

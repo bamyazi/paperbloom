@@ -1,4 +1,5 @@
 import type { ElementDefinition } from "../../engine/Element.ts";
+import type { StoryVoice } from "../../engine/narration/StoryVoice.ts";
 
 export type EpisodeSetting = "meadow" | "stream" | "garden" | "glade";
 
@@ -17,6 +18,7 @@ export interface EpisodeDefinition {
   id: string;
   title: string;
   setting: EpisodeSetting;
+  voice: StoryVoice;
   opening: string;
   prompt: string;
   progress: string;

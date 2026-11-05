@@ -177,6 +177,7 @@ export class Scene06Sky extends StoryScene {
     new ColoringPuzzle({
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
+      counting: this.ctx.hud.counting,
       targets: this.colorTargets,
       onColor: (remaining) => {
         if (remaining > 0) this.ctx.hud.showCaption("Beautiful! Keep colouring the sky!", 0);

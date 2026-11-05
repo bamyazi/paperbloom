@@ -14,6 +14,11 @@ for 1.4 seconds, and the page waits 4 seconds of animation before turning.
 The next page also waits for the closing narration to finish, followed by a
 short quiet pause. Slow frames or backgrounding cannot skip the colour wave.
 
+Chapters with several things to tap also teach counting: each newly coloured
+object adds one to a large number and its row of dots. The narrator counts
+aloud, then the character's closing line finishes before the page turns.
+Tapping the same object again does not add another count.
+
 The story: a young girl whose hair holds every colour must bring colour back to a
 world that has faded to ink and cream. Her rainbow hair is the only colour
 anywhere in the world.
@@ -28,6 +33,13 @@ support, then select **Open the book**. On a phone, play in landscape orientatio
 Everything is generated procedurally on 2D canvases — **no image assets**. Scenery
 is drawn as ink line-work on a fibrous cream "paper" texture, then mounted on flat
 cutouts that hinge up from the page.
+
+Story voices are recorded WAV assets, with a separate cast for Mabli and each
+woodland friend. Players download only the line being played; no voice service,
+account or API key is needed. Browser speech is a fallback if a recording cannot
+play. The free Kokoro model runs locally during authoring; see
+[voice generation and casting](tools/voice_generation/README.md) for regeneration,
+source licences and pronunciation notes.
 
 ## Running it
 
@@ -47,6 +59,7 @@ Run the regression tests with Node.js 24 or newer:
 
 ```powershell
 npm test
+npm run check:voices # check recorded text, speaker keys, WAV formats and hashes
 ```
 
 ### Reviewing the new chapters locally
@@ -122,6 +135,8 @@ src/
     Element.ts              Builds pop-ups from element definitions
     Popup.ts                Hinges, unfolding, highlighting and colouring
     Cutout.ts               Canvas artwork rendered as a Three.js mesh
+    CutoutColorBlend.ts      Smooth GPU blend between ink and coloured artwork
+    animation/PopupMotion.ts Continuous bobbing, breathing and tap reactions
     Interaction.ts          Compatibility exports for scene imports
     interaction/
       Hotspot.ts            Hotspot and screen-coordinate types
@@ -130,11 +145,17 @@ src/
       TapDiagnostics.ts     Optional ?debug tap and projected-art overlay
     ColoringPuzzle.ts       Tap-to-colour targets and puzzle completion
     Hud.ts                  Title lifecycle (inert after start), captions and closing card
-    Narrator.ts             Browser speech synthesis for story text
+    Narrator.ts             Recorded story lines, queue and browser speech fallback
+    narration/              WAV lookup, audio lifecycle and fallback character voices
+    learning/               Counting progress and ordered number narration
     SoundEngine.ts          Synthesised effects and ambient music
     Transition.ts           Page-turn overlay
+    transition/             Curved paper leaf, animation and cancellation lifecycle
     Easing.ts               Animation easing functions
   game/
+    audio/                  Generated text/speaker catalogue for recorded WAVs
+    learning/               Counting display and visual number feedback
+    presentation/           Static illustrated book cover
     story/
       StoryChapters.ts      createStoryChapters catalog, chapter IDs and order
     elements.ts             Reusable prop definitions, colours and fold timings
@@ -175,3 +196,31 @@ Configure `this.rig` before placing pop-ups, register the chapter's interaction,
 and call `this.complete()` once its puzzle is solved. Completion owns the scenery
 wash and celebration; change their timing in `src/engine/SceneTimings.ts` and
 their visuals in `src/engine/celebration/ChapterCelebration.ts`.
+
+### Editing dialogue and voices
+
+Use the third argument of `hud.showCaption(text, seconds, speaker)` to choose a
+character. New episode definitions use `voice` for their prompt, encouragement
+and closing line, while `opening` uses the narrator. After changing dialogue,
+export and regenerate the corresponding WAVs using the voice authoring guide;
+the catalogue keys include both the exact text and the speaker.
+
+The static assets under `public/audio/narration/` are copied into the production
+build and resolve relative to the book's URL, including `/paperbloom/` on GitHub
+Pages. Keep model weights, virtual environments and preview builds outside the
+repository. Captions and the browser fallback keep changed text playable while
+its replacement recording is being authored.
+
+### Changing the counting lesson
+
+`engine/learning/CountingLesson.ts` owns the current count and number words;
+`ColoringPuzzle` advances it only after a new target is coloured. Each scene
+passes `hud.counting` into its puzzle, and `StoryScene` resets it on entry and
+exit. Single-target chapters keep their usual dialogue without a counting badge.
+Change the badge and dots in `game/learning/CountingDisplay.ts` and its CSS.
+
+`NarrationQueue` keeps rapid taps in spoken order. During counting, the HUD shows
+encouragement as text and queues the closing dialogue after the final number.
+`Narrator.isSpeaking` includes pending lines, so chapter completion waits for
+both the lesson and the closing dialogue. `main.ts` composes the display with
+the engine through the small `CountingView` interface.

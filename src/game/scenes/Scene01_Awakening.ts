@@ -218,16 +218,18 @@ export class Scene01Awakening extends StoryScene {
     new ColoringPuzzle({
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
+      counting: this.ctx.hud.counting,
       targets: this.colorTargets,
       onColor: (remaining) => {
         if (remaining > 0) {
-          this.ctx.hud.showCaption("So pretty! Tap the other flowers too.", 0);
+          this.ctx.hud.showCaption("So pretty! Let's colour the other flowers too!", 0, "mabli");
         }
       },
       onComplete: () => {
         this.ctx.hud.showCaption(
-          "You did it! Colour is coming back to the world. And so Mabli's journey begins.",
-          0
+          "We did it! Look at all those lovely colours. Come on, let's see who's waiting for us!",
+          0,
+          "mabli"
         );
         this.complete();
       }

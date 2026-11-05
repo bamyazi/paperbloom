@@ -154,15 +154,17 @@ export class Scene05Fox extends StoryScene {
 
   private startFoxPuzzle(): void {
     this.ctx.hud.showCaption(
-      "“Oh… I'm a little fox. I've lost my lovely orange coat. Will you colour me in?”",
-      0
+      "“Hello! My orange coat is gone. Tap me to bring it back!”",
+      0,
+      "fox"
     );
     new ColoringPuzzle({
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
+      counting: this.ctx.hud.counting,
       targets: this.colorTargets,
       onComplete: () => {
-        this.ctx.hud.showCaption("“Look at me — orange again! Thank you, friend!”", 0);
+        this.ctx.hud.showCaption("“Oh, my orange coat! Thank you, Mabli!”", 0, "fox");
         this.complete();
       }
     });

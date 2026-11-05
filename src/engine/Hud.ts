@@ -6,6 +6,8 @@
  * reaching into the document. Captions are also read aloud by the narrator.
  */
 import { Narrator } from "./Narrator.ts";
+import type { StoryVoice } from "./narration/StoryVoice.ts";
+import { CountingLesson } from "./learning/CountingLesson.ts";
 
 export class Hud {
   private readonly titleCard: HTMLElement;
@@ -16,7 +18,10 @@ export class Hud {
   private readonly endSubtitle: HTMLElement;
   private captionTimer = 0;
 
-  constructor(private readonly narrator?: Narrator) {
+  constructor(
+    private readonly narrator?: Narrator,
+    readonly counting = new CountingLesson(narrator)
+  ) {
     this.titleCard = document.getElementById("title-card")!;
     this.startButton = document.getElementById("start-button") as HTMLButtonElement;
     this.caption = document.getElementById("caption")!;
@@ -40,11 +45,17 @@ export class Hud {
   }
 
   /** Show a caption, read it aloud, and (if `seconds` given) auto-hide it. */
-  showCaption(text: string, seconds = 0): void {
+  showCaption(text: string, seconds = 0, speaker: StoryVoice = "narrator"): void {
     this.caption.textContent = text;
     this.caption.classList.add("visible");
     this.captionTimer = seconds > 0 ? seconds : 0;
-    this.narrator?.speak(text);
+    if (this.counting.hasCounted) {
+      // Progress remains visible without interrupting the numbers. The final
+      // dialogue follows the last number and participates in the usual gate.
+      if (this.counting.isComplete) this.narrator?.enqueue(text, speaker);
+    } else {
+      this.narrator?.speak(text, speaker);
+    }
   }
 
   hideCaption(): void {

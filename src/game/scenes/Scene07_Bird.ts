@@ -159,18 +159,20 @@ export class Scene07Bird extends StoryScene {
 
   private startBirdPuzzle(): void {
     this.ctx.hud.showCaption(
-      "“Tweet! We're little birds, but our colours have flown away. Tap each of us to colour us in!”",
-      0
+      "“Tweet! Our feathers need some blue. Can you tap each little bird?”",
+      0,
+      "bird"
     );
     new ColoringPuzzle({
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
+      counting: this.ctx.hud.counting,
       targets: this.colorTargets,
       onColor: (remaining) => {
-        if (remaining > 0) this.ctx.hud.showCaption("“Tweet! Now colour my friends too!”", 0);
+        if (remaining > 0) this.ctx.hud.showCaption("“Tweet-tweet! Help my friends too!”", 0, "bird");
       },
       onComplete: () => {
-        this.ctx.hud.showCaption("“Tweet-tweet! A whole flock of colour — thank you!”", 0);
+        this.ctx.hud.showCaption("“We can sing in colour again! Thank you, Mabli!”", 0, "bird");
         this.complete();
       }
     });

@@ -154,15 +154,17 @@ export class Scene08Rabbit extends StoryScene {
 
   private startRabbitPuzzle(): void {
     this.ctx.hud.showCaption(
-      "“Hello… I'm a shy little rabbit, and my soft brown is all gone. Will you colour me in?”",
-      0
+      "“Hello, Mabli. Can you make my soft fur brown again? Tap me!”",
+      0,
+      "rabbit"
     );
     new ColoringPuzzle({
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
+      counting: this.ctx.hud.counting,
       targets: this.colorTargets,
       onComplete: () => {
-        this.ctx.hud.showCaption("“Warm and brown again! Thank you, kind friend.”", 0);
+        this.ctx.hud.showCaption("“My fur feels warm again. Thank you, Mabli!”", 0, "rabbit");
         this.complete();
       }
     });

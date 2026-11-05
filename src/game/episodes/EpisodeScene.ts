@@ -49,16 +49,17 @@ export class EpisodeScene extends StoryScene {
     if (this.puzzleStarted || !this.rig.atEnd) return;
     this.puzzleStarted = true;
     this.rig.pause();
-    this.ctx.hud.showCaption(this.definition.prompt, 0);
+    this.ctx.hud.showCaption(this.definition.prompt, 0, this.definition.voice);
     new ColoringPuzzle({
       interaction: this.ctx.interaction,
       sound: this.ctx.sound,
+      counting: this.ctx.hud.counting,
       targets: this.targets,
       onColor: (remaining) => {
-        if (remaining > 0) this.ctx.hud.showCaption(this.definition.progress, 0);
+        if (remaining > 0) this.ctx.hud.showCaption(this.definition.progress, 0, this.definition.voice);
       },
       onComplete: () => {
-        this.ctx.hud.showCaption(this.definition.ending, 0);
+        this.ctx.hud.showCaption(this.definition.ending, 0, this.definition.voice);
         this.complete();
       }
     });

@@ -1,9 +1,13 @@
 import "./style.css";
 import { Game } from "./engine/index.ts";
 import { createStoryChapters } from "./game/story/StoryChapters.ts";
+import { NARRATION_CLIPS } from "./game/audio/narrationClips.ts";
+import { addBookCover } from "./game/presentation/BookCover.ts";
+import { CountingDisplay } from "./game/learning/CountingDisplay.ts";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
-const game = new Game(canvas);
+const game = new Game(canvas, NARRATION_CLIPS, new CountingDisplay());
+addBookCover(document.getElementById("title-card")!);
 
 const chapters = createStoryChapters();
 

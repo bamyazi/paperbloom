@@ -2,6 +2,10 @@ import * as THREE from "three";
 import { InteractionManager } from "./Interaction.ts";
 import { Hud } from "./Hud.ts";
 import { Narrator } from "./Narrator.ts";
+import { RecordedNarration } from "./narration/RecordedNarration.ts";
+import type { NarrationClipMap } from "./narration/RecordedNarration.ts";
+import { CountingLesson } from "./learning/CountingLesson.ts";
+import type { CountingView } from "./learning/CountingLesson.ts";
 import { SoundEngine } from "./SoundEngine.ts";
 import { SceneManager } from "./SceneManager.ts";
 import { Transition } from "./Transition.ts";
@@ -59,7 +63,7 @@ export class Game {
   private readonly viewportObserver: ResizeObserver;
   private running = false;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, narrationClips: NarrationClipMap = {}, countingView?: CountingView) {
     // Phones have weak GPUs but very high pixel densities; antialiasing and a
     // 2x+ pixel ratio there flood the fill rate and drop the frame rate, which
     // in turn slows the dt-driven animation clock. Trim both on mobile.
@@ -88,9 +92,9 @@ export class Game {
     this.camera.position.set(0, 1.5, 0);
 
     this.interaction = new InteractionManager(this.camera, canvas);
-    this.narrator = new Narrator();
+    this.narrator = new Narrator(undefined, new RecordedNarration(narrationClips));
     this.sound = new SoundEngine();
-    this.hud = new Hud(this.narrator);
+    this.hud = new Hud(this.narrator, new CountingLesson(this.narrator, countingView));
 
     const context: SceneContext = {
       scene: this.scene,
@@ -121,6 +125,7 @@ export class Game {
     // Clamp only against big jumps (tab switches). A low cap would make the
     // whole game run in slow motion on phones that render below 1/cap fps.
     const dt = Math.min(this.clock.getDelta(), 0.1);
+    this.narrator.update();
     this.scenes.update(dt);
     this.hud.update(dt);
     this.renderer.render(this.scene, this.camera);
