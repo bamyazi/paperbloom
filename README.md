@@ -92,7 +92,7 @@ src/
       HotspotPicker.ts      Painted-art picking and bounded CSS-pixel padding
       TapDiagnostics.ts     Optional ?debug tap and projected-art overlay
     ColoringPuzzle.ts       Tap-to-colour targets and puzzle completion
-    Hud.ts                  Title card, captions and closing card
+    Hud.ts                  Title lifecycle (inert after start), captions and closing card
     Narrator.ts             Browser speech synthesis for story text
     SoundEngine.ts          Synthesised effects and ambient music
     Transition.ts           Page-turn overlay

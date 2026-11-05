@@ -29,6 +29,9 @@ export class Hud {
     this.startButton.addEventListener(
       "click",
       () => {
+        // Opacity only hides the artwork. Make the whole title subtree inert
+        // so its button cannot keep intercepting taps or keyboard focus.
+        this.titleCard.inert = true;
         this.titleCard.classList.add("hidden");
         callback();
       },
