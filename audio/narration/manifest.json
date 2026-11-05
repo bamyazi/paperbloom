@@ -1,7 +1,7 @@
 {
   "narrator\nMabli heard a little buzz in the meadow. Some bees needed her help.": "audio/narration/narrator-b38da4303abd.wav",
-  "bee\nBzz! Can you make us golden again? Tap each bee.": "audio/narration/bee-cea3f040551a.wav",
-  "bee\nBzz-bzz! My friends need gold too!": "audio/narration/bee-e721d5cd13a1.wav",
+  "bee\nBuzz! Can you make us golden again? Tap each bee.": "audio/narration/bee-ea722d86dedc.wav",
+  "bee\nBuzz, buzz! My friends need gold too!": "audio/narration/bee-0445ab4cad75.wav",
   "bee\nThank you, Mabli! Now our meadow is buzzing with colour!": "audio/narration/bee-3769960bf85e.wav",
   "narrator\nEvening came, and Mabli found a glade full of little fireflies.": "audio/narration/narrator-bb83a6c7bef5.wav",
   "firefly\nOur little lights have gone out. Tap each firefly to help us glow.": "audio/narration/firefly-a058a786b8c4.wav",
@@ -50,6 +50,8 @@
   "narrator\nThe toadstools have lost their cheerful red caps. Tap each one to colour it in!": "audio/narration/narrator-10f31b608758.wav",
   "narrator\nLovely and red! Colour the others too.": "audio/narration/narrator-2d3490151af8.wav",
   "narrator\nA whole ring of red toadstools — wonderful!": "audio/narration/narrator-5088cf164244.wav",
+  "narrator\nCan you tap one? Let's give it some colour!": "audio/narration/narrator-55b218b4fc39.wav",
+  "narrator\nTap the one with the twinkly light. You can do it!": "audio/narration/narrator-ff2a2af91151.wav",
   "narrator\nOne.": "audio/narration/narrator-8dfb9d3d35ad.wav",
   "narrator\nTwo.": "audio/narration/narrator-68c9d02ffe5c.wav",
   "narrator\nThree.": "audio/narration/narrator-2933f1af9082.wav",
