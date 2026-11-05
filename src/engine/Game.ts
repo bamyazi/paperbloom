@@ -55,6 +55,8 @@ export class Game {
   readonly scenes: SceneManager;
 
   private readonly clock = new THREE.Clock();
+  // The game and its observer share the lifetime of this page.
+  private readonly viewportObserver: ResizeObserver;
   private running = false;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -100,9 +102,9 @@ export class Game {
     };
     this.scenes = new SceneManager(context, new Transition());
 
+    this.viewportObserver = new ResizeObserver(this.resize);
+    this.viewportObserver.observe(canvas);
     this.resize();
-    window.addEventListener("resize", this.resize);
-    window.addEventListener("orientationchange", this.resize);
   }
 
   /** Load a scene and begin the render loop (idempotent). */
@@ -125,8 +127,11 @@ export class Game {
   };
 
   private readonly resize = (): void => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    // Render and pick against the same displayed canvas, including browser
+    // panels, rotation and mobile viewport changes. Backing pixels are only
+    // for image quality and must never define pointer coordinates.
+    const { width, height } = this.renderer.domElement.getBoundingClientRect();
+    if (width <= 0 || height <= 0) return;
     const aspect = width / height;
     this.camera.aspect = aspect;
     if (aspect < DESIGN_ASPECT) {
@@ -138,6 +143,6 @@ export class Game {
       this.camera.fov = DESIGN_VFOV;
     }
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    this.renderer.setSize(width, height, false);
   };
 }

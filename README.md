@@ -36,6 +36,25 @@ npm run build    # type-check and produce a production build in dist/
 npm run preview  # preview the production build
 ```
 
+Run the interaction regression tests with Node.js 24 or newer:
+
+```powershell
+npm test
+```
+
+### Touch input and debugging
+
+Puzzle targets become active once the camera reaches the clearing. Taps and
+clicks use the canvas's displayed size and position, independently of pixel
+density. Visible painted artwork takes priority over a neighbouring target's
+padding; touch targets allow an 18px margin and mouse targets an 8px margin.
+A tap can drift up to 30px, and simultaneous fingers are tracked separately.
+
+Add `?debug` to the game URL (for example,
+`http://localhost:5173/?debug`) to display the last tap as a red cross, the
+projected art planes as green outlines and a hit summary. The overlay follows
+the canvas viewport, making it useful when checking device rotation or sizing.
+
 ## Deployment
 
 GitHub Pages publishes the built files from the root of the `gh-pages` branch.
@@ -63,7 +82,12 @@ src/
     Element.ts              Builds pop-ups from element definitions
     Popup.ts                Hinges, unfolding, highlighting and colouring
     Cutout.ts               Canvas artwork rendered as a Three.js mesh
-    Interaction.ts          Pointer/touch picking and hotspot registration
+    Interaction.ts          Compatibility exports for scene imports
+    interaction/
+      Hotspot.ts            Hotspot and screen-coordinate types
+      InteractionManager.ts Pointer gestures, capture and hotspot registration
+      HotspotPicker.ts      Painted-art picking and bounded CSS-pixel padding
+      TapDiagnostics.ts     Optional ?debug tap and projected-art overlay
     ColoringPuzzle.ts       Tap-to-colour targets and puzzle completion
     Hud.ts                  Title card, captions and closing card
     Narrator.ts             Browser speech synthesis for story text

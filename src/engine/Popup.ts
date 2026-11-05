@@ -194,39 +194,6 @@ export class Popup {
     }
   }
 
-  /**
-   * Add a big invisible pad around each part so taps anywhere *near* the piece
-   * count — a very forgiving hit area for small children. Only meant for
-   * colouring targets.
-   */
-  enlargeHitArea(): void {
-    for (const hinge of this.hinges) {
-      const geo = hinge.mesh.geometry as THREE.PlaneGeometry;
-      const gw = geo.parameters?.width ?? 1;
-      const gh = geo.parameters?.height ?? 1;
-      // A generous invisible sphere around the art, so a tap from any direction
-      // that passes near the piece counts — not just one that lands on its flat
-      // face.
-      const radius = Math.max(gw, gh) * 0.95 + 0.7;
-      const pad = new THREE.Mesh(
-        new THREE.SphereGeometry(radius, 12, 8),
-        new THREE.MeshBasicMaterial({
-          transparent: true,
-          opacity: 0,
-          depthWrite: false,
-          depthTest: false,
-          // Double-sided so the tap ray still hits the pad when the camera ends
-          // up inside it (large characters), where front-face culling would
-          // otherwise drop the intersection and the piece couldn't be tapped.
-          side: THREE.DoubleSide
-        })
-      );
-      pad.renderOrder = -1;
-      pad.userData.hitPad = true;
-      hinge.mesh.add(pad);
-    }
-  }
-
   update(dt: number): void {
     this.clock += dt;
 

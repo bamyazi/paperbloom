@@ -36,10 +36,9 @@ export class ColoringPuzzle {
   constructor(private readonly options: ColoringPuzzleOptions) {
     this.remaining = options.targets.length;
     for (const target of options.targets) {
-      // A gentle pulse makes each tappable target obvious to a small child, and
-      // a big invisible pad makes it very forgiving to tap.
+      // A CSS-pixel margin keeps taps forgiving without overlapping distant
+      // targets with large invisible hit volumes.
       target.popup.setHighlighted(true);
-      target.popup.enlargeHitArea();
       options.interaction.register({
         object: target.popup.root,
         cursor: "pointer",
