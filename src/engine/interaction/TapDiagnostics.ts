@@ -8,7 +8,10 @@ export class TapDiagnostics {
   private canvas: HTMLCanvasElement | null = null;
   private label: HTMLPreElement | null = null;
 
-  constructor(private readonly camera: THREE.Camera) {
+  constructor(
+    private readonly camera: THREE.Camera,
+    private readonly surface?: HTMLElement
+  ) {
     this.overlay = this.createOverlay();
   }
 
@@ -32,7 +35,8 @@ export class TapDiagnostics {
 
     this.raycaster.setFromCamera(pointer, this.camera);
     const lines = [
-      `tap ${pointer.x.toFixed(2)},${pointer.y.toFixed(2)}  pieces:${hotspots.length}  picked:${picked ? "YES" : "no"}`
+      `tap ${pointer.x.toFixed(2)},${pointer.y.toFixed(2)}  pieces:${hotspots.length}  picked:${picked ? "YES" : "no"}`,
+      ...this.surfaceReport(pointer, viewport)
     ];
     for (const [index, hotspot] of hotspots.entries()) {
       const hits = this.raycaster.intersectObject(hotspot.object, true);
@@ -41,6 +45,35 @@ export class TapDiagnostics {
     }
     this.label.textContent = lines.join("\n");
     this.drawMarkers(pointer, viewport, hotspots);
+  }
+
+  /** Read device measurements only in debug mode; nothing is sent or stored. */
+  private surfaceReport(pointer: THREE.Vector2, rect: DOMRect): string[] {
+    const clientX = rect.left + (pointer.x + 1) * rect.width / 2;
+    const clientY = rect.top + (1 - pointer.y) * rect.height / 2;
+    const format = (value: number): string => value.toFixed(1);
+    const lines = [
+      `client ${format(clientX)},${format(clientY)}  DPR ${window.devicePixelRatio}`,
+      `canvas CSS ${format(rect.left)},${format(rect.top)} ${format(rect.width)}x${format(rect.height)}`
+    ];
+    const visual = window.visualViewport;
+    if (visual) {
+      lines.push(`visual ${format(visual.width)}x${format(visual.height)} offset ${format(visual.offsetLeft)},${format(visual.offsetTop)} scale ${format(visual.scale)}`);
+    }
+    if ((this.camera as THREE.PerspectiveCamera).isPerspectiveCamera) {
+      const camera = this.camera as THREE.PerspectiveCamera;
+      lines.push(`camera aspect ${camera.aspect.toFixed(3)} FOV ${format(camera.fov)}`);
+    }
+    const surface = this.surface as HTMLCanvasElement | undefined;
+    if (surface && typeof surface.getContext === "function") {
+      const gl = surface.getContext("webgl2");
+      lines.push(`backing ${surface.width}x${surface.height}`);
+      if (gl) {
+        const viewport = Array.from(gl.getParameter(gl.VIEWPORT) as Int32Array);
+        lines.push(`GL buffer ${gl.drawingBufferWidth}x${gl.drawingBufferHeight} viewport ${viewport.join(",")}`);
+      }
+    }
+    return lines;
   }
 
   dispose(): void {

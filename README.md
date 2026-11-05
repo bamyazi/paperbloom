@@ -54,6 +54,9 @@ Add `?debug` to the game URL (for example,
 `http://localhost:5173/?debug`) to display the last tap as a red cross, the
 projected art planes as green outlines and a hit summary. The overlay follows
 the canvas viewport, making it useful when checking device rotation or sizing.
+It also reports CSS dimensions, pixel density, visual viewport scale and the
+actual WebGL drawing buffer/viewport. These measurements stay on the device;
+share a screenshot after a tap to diagnose a device-specific offset.
 
 ## Deployment
 

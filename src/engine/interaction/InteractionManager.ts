@@ -19,7 +19,7 @@ export class InteractionManager {
 
   constructor(camera: THREE.Camera, private readonly domElement: HTMLElement) {
     this.picker = new HotspotPicker(camera);
-    this.diagnostics = new TapDiagnostics(camera);
+    this.diagnostics = new TapDiagnostics(camera, domElement);
     domElement.addEventListener("pointermove", this.handlePointerMove);
     domElement.addEventListener("pointerdown", this.handlePointerDown);
     domElement.addEventListener("pointerup", this.handlePointerUp);
