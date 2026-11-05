@@ -1,4 +1,4 @@
-import { SceneContext, StoryScene } from "./StoryScene.ts";
+import type { SceneContext, StoryScene } from "./StoryScene.ts";
 import { Transition } from "./Transition.ts";
 
 export interface SceneChangeOptions {

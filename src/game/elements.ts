@@ -162,7 +162,7 @@ export const GIRL: ElementDefinition = {
     }
   ],
   footprintRadius: 0.7,
-  idle: { amplitude: 0.02, frequency: 0.7 }
+  motion: { bob: 0.02, drift: 0.025, tilt: 0.025, breathe: 0.02, speed: 0.8, reactionHeight: 0.18 }
 };
 
 /**
@@ -191,7 +191,7 @@ export const FROG: ElementDefinition = {
     { draw: drawFrog, width: 1.5, height: 1.3, duration: 0.8, animated: true }
   ],
   footprintRadius: 0.65,
-  idle: { amplitude: 0.02, frequency: 1.0 }
+  motion: { bob: 0.045, drift: 0, tilt: 0.025, breathe: 0.055, speed: 1.2, reactionHeight: 0.3 }
 };
 
 /** A flat lily pad (pond decoration). */
@@ -224,7 +224,7 @@ export const BUTTERFLY: ElementDefinition = {
   ],
   footprintRadius: 0.45,
   shadow: false,
-  idle: { amplitude: 0.05, frequency: 1.3 }
+  motion: { bob: 0.22, drift: 0.18, tilt: 0.12, breathe: 0.035, speed: 1.4, reactionHeight: 0.22 }
 };
 
 /** An apple that hangs in a tree (elevated) and can be coloured in. */
@@ -239,21 +239,21 @@ export const APPLE: ElementDefinition = {
 export const FOX: ElementDefinition = {
   parts: [{ draw: drawFox, width: 1.7, height: 1.7, duration: 0.85, animated: true }],
   footprintRadius: 0.75,
-  idle: { amplitude: 0.015, frequency: 0.9 }
+  motion: { bob: 0.025, drift: 0.035, tilt: 0.045, breathe: 0.025, speed: 0.8, reactionHeight: 0.22 }
 };
 
 /** A plump little bird that bobs and can be coloured (a bluebird). */
 export const BIRD: ElementDefinition = {
   parts: [{ draw: drawBird, width: 1.4, height: 1.4, duration: 0.8, animated: true }],
   footprintRadius: 0.6,
-  idle: { amplitude: 0.02, frequency: 1.1 }
+  motion: { bob: 0.07, drift: 0.065, tilt: 0.08, breathe: 0.025, speed: 1.6, reactionHeight: 0.24 }
 };
 
 /** A shy rabbit sitting up, ears flicking; can be coloured a soft brown. */
 export const RABBIT: ElementDefinition = {
   parts: [{ draw: drawRabbit, width: 1.6, height: 1.8, duration: 0.85, animated: true }],
   footprintRadius: 0.7,
-  idle: { amplitude: 0.015, frequency: 0.8 }
+  motion: { bob: 0.09, drift: 0.025, tilt: 0.035, breathe: 0.03, speed: 1.1, reactionHeight: 0.36 }
 };
 
 /** A friendly sun high in the sky (elevated), colourable golden. Rays turn. */

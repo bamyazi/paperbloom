@@ -1,5 +1,8 @@
 import * as THREE from "three";
-import { Easing, easeOutBack, clamp } from "./Easing.ts";
+import { easeOutBack, easeInOutCubic, clamp } from "./Easing.ts";
+import type { Easing } from "./Easing.ts";
+import { PopupMotion } from "./animation/PopupMotion.ts";
+import type { PopupMotionOptions } from "./animation/PopupMotion.ts";
 
 export interface HingeSpec {
   /** The paper cutout to animate. */
@@ -20,8 +23,10 @@ export interface HingeSpec {
   delay?: number;
   /** Seconds this hinge takes to unfold. */
   duration?: number;
-  easing?: Easing;  /** Redraw this part every frame (with elapsed time) for animated art. */
-  animated?: boolean;}
+  easing?: Easing;
+  /** Redraw this part every frame (with elapsed time) for animated art. */
+  animated?: boolean;
+}
 
 interface Hinge {
   pivot: THREE.Group;
@@ -46,17 +51,15 @@ interface Hinge {
  */
 export class Popup {
   readonly root = new THREE.Group();
+  /** Hinged artwork moves here; contact shadows remain on the stage anchor. */
+  readonly motionGroup = new THREE.Group();
+  private readonly motion = new PopupMotion(this.motionGroup);
 
   /** Approximate half-width in X, used by the camera-corridor guard. */
   footprintRadius = 0.5;
 
   /** The colour this piece takes when the world blooms at the scene's end. */
   naturalColor: string | null = null;
-
-  /** Idle sway (radians) applied to the whole piece once it has opened. */
-  private idleAmplitude = 0.02;
-  private idleFrequency = 0.8;
-  private readonly idlePhase = Math.random() * Math.PI * 2;
 
   private readonly hinges: Hinge[] = [];
   private opening = false;
@@ -82,6 +85,7 @@ export class Popup {
 
   constructor() {
     this.root.visible = false;
+    this.root.add(this.motionGroup);
   }
 
   /**
@@ -90,8 +94,12 @@ export class Popup {
    * lockstep.
    */
   setIdle(amplitude: number, frequency: number): this {
-    this.idleAmplitude = amplitude;
-    this.idleFrequency = frequency;
+    this.motion.configure({ tilt: amplitude, speed: frequency });
+    return this;
+  }
+
+  configureMotion(options: PopupMotionOptions): this {
+    this.motion.configure(options);
     return this;
   }
 
@@ -107,7 +115,7 @@ export class Popup {
 
     spec.mesh.position.copy(spec.meshOffset ?? new THREE.Vector3(0, 0, 0));
     pivot.add(spec.mesh);
-    this.root.add(pivot);
+    this.motionGroup.add(pivot);
 
     this.hinges.push({
       pivot,
@@ -157,6 +165,7 @@ export class Popup {
     this.colored = true;
     this.highlighted = false;
     this.currentColor = color;
+    this.motion.react();
     for (const hinge of this.hinges) {
       hinge.mesh.scale.setScalar(1);
       const render = hinge.mesh.userData.render as
@@ -178,7 +187,7 @@ export class Popup {
     this.currentColor = color;
     this.fading = true;
     this.fadeElapsed = 0;
-    this.fadeDelay = delay;
+    this.fadeDelay = Math.max(0, delay);
     this.fadeDuration = Math.max(0.001, duration);
     this.mix = 0;
   }
@@ -218,11 +227,8 @@ export class Popup {
     // Idle sway, ramped in gently so it doesn't snap on when the fold ends.
     if (this.opening || this.opened) {
       this.sinceOpen += dt;
-      const ramp = clamp(this.sinceOpen / 0.8, 0, 1);
-      this.root.rotation.z =
-        Math.sin(this.clock * this.idleFrequency + this.idlePhase) *
-        this.idleAmplitude *
-        ramp;
+      const ramp = THREE.MathUtils.smoothstep(this.sinceOpen, 0, 0.8);
+      this.motion.update(this.clock, ramp);
     }
 
     // A quick scale "pop" when the piece is coloured in.
@@ -231,25 +237,25 @@ export class Popup {
       const t = this.pulse / 0.35;
       if (t >= 1) {
         this.pulse = 0;
-        this.root.scale.setScalar(1);
-      } else {
-        this.root.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.14);
+      } else if (!this.motion.reducedMotion) {
+        this.motionGroup.scale.multiplyScalar(1 + Math.sin(t * Math.PI) * 0.14);
       }
     }
 
     // Gentle grow/shrink pulse on an uncoloured target, to draw a child's eye.
-    if (this.highlighted && !this.colored && this.opened) {
+    if (this.highlighted && !this.colored && this.opened && !this.motion.reducedMotion) {
       this.highlightClock += dt;
       const s = 1 + Math.sin(this.highlightClock * 2.8) * 0.1;
       for (const hinge of this.hinges) hinge.mesh.scale.setScalar(s);
     }
 
-    // Smooth colour bloom: ramp `mix` and redraw each part, cross-fading the
-    // coloured art up over the mono art.
+    const wasFading = this.fading;
+    // Every frame updates the cheap GPU blend uniform. Cutouts independently
+    // refresh only genuinely animated texture art at its lower drawing rate.
     if (this.fading) {
       this.fadeElapsed += dt;
       const local = clamp((this.fadeElapsed - this.fadeDelay) / this.fadeDuration, 0, 1);
-      this.mix = local;
+      this.mix = easeInOutCubic(local);
       if (this.fadeElapsed >= this.fadeDelay && this.currentColor) {
         for (const hinge of this.hinges) {
           const render = hinge.mesh.userData.render as
@@ -266,7 +272,9 @@ export class Popup {
     }
 
     // Per-frame redraw for animated cutouts (e.g. flowing hair), throttled.
-    if (this.opened) {
+    // The fade already redraws animated parts at the same story time. Avoid a
+    // second canvas upload on those frames, but keep animation alive in delays.
+    if (this.opened && (!wasFading || this.fadeElapsed < this.fadeDelay)) {
       this.animAccum += dt;
       if (this.animAccum >= 0.04) {
         this.animAccum = 0;

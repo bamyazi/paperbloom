@@ -2,11 +2,11 @@ import * as THREE from "three";
 import {
   buildElement,
   CameraRig,
-  ColorTarget,
   ColoringPuzzle,
   Popup,
   StoryScene
 } from "../../engine/index.ts";
+import type { ColorTarget } from "../../engine/ColoringPuzzle.ts";
 import { makePaperTexture } from "../art/Paper.ts";
 import {
   BUSH,
@@ -34,6 +34,7 @@ const HOLD_TIME = 5.2;
 export class Scene06Sky extends StoryScene {
   private puzzleStarted = false;
   private finale = false;
+  private endingShown = false;
   private readonly colorTargets: ColorTarget[] = [];
   private readonly warmTarget = new THREE.Color("#f7ecd2");
   private seed = 0x5c1b7a01;
@@ -158,6 +159,13 @@ export class Scene06Sky extends StoryScene {
       const background = this.ctx.scene.background;
       if (background instanceof THREE.Color) background.lerp(this.warmTarget, Math.min(1, dt * 0.6));
       this.ctx.scene.fog?.color.lerp(this.warmTarget, Math.min(1, dt * 0.6));
+      if (!this.endingShown && this.completionReady) {
+        this.endingShown = true;
+        this.ctx.hud.showEndCard(
+          "The End",
+          "And so Mabli, the girl with the rainbow hair, brought colour back to the whole world."
+        );
+      }
     }
   }
 
@@ -182,13 +190,7 @@ export class Scene06Sky extends StoryScene {
     this.finale = true;
     this.ctx.hud.showCaption("Colour rushed back into every corner of the world!", 0);
     this.place(buildElement(RAINBOW), 0, -16.5, 0);
-
-    window.setTimeout(() => {
-      this.ctx.hud.showEndCard(
-        "The End",
-        "And so Mabli, the girl with the rainbow hair, brought colour back to the whole world."
-      );
-      this.complete();
-    }, 3400);
+    // The wash and celebration belong in the scene, before the ending covers it.
+    this.complete();
   }
 }

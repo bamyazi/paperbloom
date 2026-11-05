@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { CutoutColorBlend } from "./CutoutColorBlend.ts";
 
 /**
  * Cutout.ts
@@ -29,6 +30,8 @@ export interface CutoutOptions {
   pixelsPerUnit?: number;
   /** Renders the artwork; `w`/`h` are the canvas pixel dimensions. */
   draw: CanvasDraw;
+  /** Refresh both colour layers during a wash only for moving artwork. */
+  animated?: boolean;
   /** Render both faces (true) so a folded cutout is visible from behind. */
   doubleSided?: boolean;
   /** Alpha below which a pixel is cut away entirely (default 0.4). */
@@ -71,22 +74,9 @@ export function createCutout(options: CutoutOptions): THREE.Mesh {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.renderOrder = 1;
 
-  // Re-render the art later (colour on tap, or per-frame for animated cutouts).
-  // `mix` (0…1) cross-fades from the mono art to the coloured art by drawing
-  // the coloured pass over the mono one at increasing opacity — a smooth
-  // "colour blooming in" with no change needed to any draw function.
+  const colorBlend = new CutoutColorBlend(canvas, texture, material, options.draw, options.animated);
   mesh.userData.render = (color: string | null = null, time = 0, mix = 1): void => {
-    ctx.clearRect(0, 0, w, h);
-    if (color && mix < 1) {
-      options.draw(ctx, w, h, null, time);
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, Math.min(1, mix));
-      options.draw(ctx, w, h, color, time);
-      ctx.restore();
-    } else {
-      options.draw(ctx, w, h, color, time);
-    }
-    texture.needsUpdate = true;
+    colorBlend.render(color, time, mix);
   };
 
   return mesh;

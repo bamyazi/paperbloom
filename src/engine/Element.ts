@@ -1,7 +1,9 @@
 import * as THREE from "three";
 import { Popup } from "./Popup.ts";
-import { createCutout, CanvasDraw } from "./Cutout.ts";
-import { Easing } from "./Easing.ts";
+import { createCutout } from "./Cutout.ts";
+import type { CanvasDraw } from "./Cutout.ts";
+import type { Easing } from "./Easing.ts";
+import type { PopupMotionOptions } from "./animation/PopupMotion.ts";
 
 /**
  * Element.ts
@@ -52,6 +54,8 @@ export interface ElementDefinition {
   footprintRadius?: number;
   /** Idle sway once opened. */
   idle?: { amplitude: number; frequency: number };
+  /** Character movement, applied to artwork rather than its placed root. */
+  motion?: PopupMotionOptions;
   /** Render both faces so folded cutouts show from behind. Default true. */
   doubleSided?: boolean;
   /** Lift off the page to avoid z-fighting when folded flat. Default 0.02. */
@@ -110,6 +114,7 @@ export function buildElement(
       width: part.width * scale,
       height: part.height * scale,
       pixelsPerUnit: part.pixelsPerUnit,
+      animated: part.animated,
       doubleSided: def.doubleSided ?? true
     });
 
@@ -160,6 +165,14 @@ export function buildElement(
     // Per-instance frequency jitter (±15%) so identical elements don't sync.
     const jitter = 0.85 + Math.random() * 0.3;
     popup.setIdle(def.idle.amplitude, def.idle.frequency * jitter);
+  }
+  if (def.motion) {
+    popup.configureMotion({
+      ...def.motion,
+      bob: (def.motion.bob ?? 0) * scale,
+      drift: (def.motion.drift ?? 0) * scale,
+      reactionHeight: (def.motion.reactionHeight ?? 0.16) * scale
+    });
   }
 
   return popup;

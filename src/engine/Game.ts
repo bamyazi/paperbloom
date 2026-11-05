@@ -5,7 +5,7 @@ import { Narrator } from "./Narrator.ts";
 import { SoundEngine } from "./SoundEngine.ts";
 import { SceneManager } from "./SceneManager.ts";
 import { Transition } from "./Transition.ts";
-import { SceneContext, StoryScene } from "./StoryScene.ts";
+import type { SceneContext, StoryScene } from "./StoryScene.ts";
 
 const PAPER_BACKGROUND = new THREE.Color("#efe9d8");
 
