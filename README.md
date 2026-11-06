@@ -21,9 +21,9 @@ Tapping the same object again does not add another count.
 
 If the child pauses, the book waits eight quiet seconds after the instructions
 or counting finish, then gently prompts and marks one remaining shape with a
-gold halo and pointing finger. A second reminder follows after twelve more
-quiet seconds. It speaks at most twice per pause; the marker stays until a new
-shape is coloured. Successful taps dismiss help before the next number starts.
+gold halo and pointing finger. Reminders repeat after twelve more quiet seconds.
+From the third reminder, the marked shape gently pulses to catch the child's
+eye. Successful taps dismiss help before the next number starts.
 Hidden tabs and portrait rotation pause help and restore a fresh grace period.
 
 The story: a young girl whose hair holds every colour must bring colour back to a
@@ -169,6 +169,7 @@ src/
                             Target-following hint halo and CSS-pixel projection
     story/
       StoryChapters.ts      createStoryChapters catalog, chapter IDs and order
+      StoryPacing.ts        Shared forward camera speed for every chapter
     elements.ts             Reusable prop definitions, colours and fold timings
     art/
       Figures.ts            Canvas drawings of characters, plants and scenery
@@ -208,6 +209,13 @@ and call `this.complete()` once its puzzle is solved. Completion owns the scener
 wash and celebration; change their timing in `src/engine/SceneTimings.ts` and
 their visuals in `src/engine/celebration/ChapterCelebration.ts`.
 
+### Changing the approach speed
+
+`game/story/StoryPacing.ts` owns `STORY_CAMERA_SPEED`. Its value of `2.0` moves
+the camera through the eight-unit approach in four seconds, after the existing
+5.2-second pop-up hold. Change this one constant to adjust every chapter's pace.
+The opening flower puzzle also waits for its narration to finish.
+
 ### Editing dialogue and voices
 
 Use the third argument of `hud.showCaption(text, seconds, speaker)` to choose a
@@ -238,8 +246,9 @@ the engine through the small `CountingView` interface.
 
 ### Changing idle help
 
-`engine/guidance/TapGuidance.ts` owns the quiet delays and per-pause reminder
-limit. `game/story/TapHints.ts` owns the two recorded hint lines. A puzzle starts
+`engine/guidance/TapGuidance.ts` owns the quiet delays and third-reminder emphasis.
+`game/story/TapHints.ts` owns the two recorded hint lines, which alternate while
+the child is paused. A puzzle starts
 guidance with its target list and reports each successful tap before counting;
 `StoryScene` resets it on entry and exit. The main game loop updates it only
 while the book is visible and ready to play, waiting whenever narration is busy.
@@ -250,6 +259,8 @@ rotation and character motion cannot move the halo away from the artwork.
 The halo is pointer-transparent and does not change picking. `Hud.showTapHint`
 and the cancellation handle returned by `Narrator.speak` dismiss only the owned
 hint, preserving any newer caption, counted number or closing dialogue.
+`engine/animation/TapHintPulse.ts` owns the marked artwork's gentle opacity pulse
+and restores its material state when help ends. Reduced motion keeps help still.
 
 ### Restarting the book
 

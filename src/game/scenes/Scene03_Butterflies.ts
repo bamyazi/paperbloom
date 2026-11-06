@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { STORY_CAMERA_SPEED } from "../story/StoryPacing.ts";
 import {
   buildElement,
   CameraRig,
@@ -38,7 +39,7 @@ export class Scene03Butterflies extends StoryScene {
 
   protected setup(): void {
     this.rig = new CameraRig(this.ctx.camera, {
-      speed: 1.6,
+      speed: STORY_CAMERA_SPEED,
       length: CAMERA_TRAVEL,
       holdTime: HOLD_TIME,
       eyeHeight: 1.4,

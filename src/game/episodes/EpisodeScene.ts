@@ -5,6 +5,7 @@ import type { ColorTarget } from "../../engine/ColoringPuzzle.ts";
 import type { Popup } from "../../engine/Popup.ts";
 import { StoryScene } from "../../engine/StoryScene.ts";
 import { GIRL } from "../elements.ts";
+import { STORY_CAMERA_SPEED } from "../story/StoryPacing.ts";
 import type { EpisodeDefinition } from "./EpisodeDefinition.ts";
 import { EpisodeLandscape } from "./EpisodeLandscape.ts";
 
@@ -19,7 +20,7 @@ export class EpisodeScene extends StoryScene {
 
   protected setup(): void {
     this.rig = new CameraRig(this.ctx.camera, {
-      speed: 1.6,
+      speed: STORY_CAMERA_SPEED,
       length: 8,
       holdTime: 5.2,
       eyeHeight: 1.4,

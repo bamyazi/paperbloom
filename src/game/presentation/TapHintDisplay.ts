@@ -9,6 +9,17 @@ interface HintLayout {
   fingerTop: number;
 }
 
+const SPARKLES = [
+  { left: 12, top: 7, size: 18, duration: 2.1, delay: -0.1, rotation: -10 },
+  { left: 49, top: 0, size: 14, duration: 2.5, delay: -1.4, rotation: 12 },
+  { left: 87, top: 9, size: 21, duration: 2.3, delay: -0.8, rotation: 16 },
+  { left: 100, top: 48, size: 15, duration: 2.6, delay: -1.9, rotation: -8 },
+  { left: 86, top: 90, size: 19, duration: 2.2, delay: -1.1, rotation: 14 },
+  { left: 48, top: 100, size: 15, duration: 2.4, delay: -0.6, rotation: -10 },
+  { left: 12, top: 92, size: 20, duration: 2.6, delay: -1.7, rotation: -15 },
+  { left: 0, top: 47, size: 14, duration: 2.1, delay: -0.35, rotation: 12 }
+] as const;
+
 /** Follows one remaining paper piece without changing its art or hit area. */
 export class TapHintDisplay {
   private readonly element: HTMLDivElement;
@@ -28,6 +39,7 @@ export class TapHintDisplay {
     this.element.setAttribute("aria-hidden", "true");
     this.halo = document.createElement("div");
     this.halo.className = "tap-hint__halo";
+    this.addSparkles();
     this.finger = document.createElement("div");
     this.finger.className = "tap-hint__finger";
     this.finger.textContent = "👆";
@@ -42,9 +54,10 @@ export class TapHintDisplay {
     return !this.disposed && this.layout(target) !== null;
   }
 
-  show(target: Popup): void {
+  show(target: Popup, emphasized = false): void {
     if (this.disposed) return;
     this.target = target;
+    this.element.className = emphasized ? "tap-hint tap-hint--emphasized" : "tap-hint";
     this.update();
   }
 
@@ -71,6 +84,7 @@ export class TapHintDisplay {
   reset(): void {
     this.target = null;
     this.element.hidden = true;
+    this.element.className = "tap-hint";
   }
 
   dispose(): void {
@@ -78,6 +92,24 @@ export class TapHintDisplay {
     this.reset();
     this.element.remove();
     this.disposed = true;
+  }
+
+  /** Allocate the little lights once; CSS gives each its own unhurried rhythm. */
+  private addSparkles(): void {
+    for (const [index, light] of SPARKLES.entries()) {
+      const sparkle = document.createElement("span");
+      sparkle.className = "tap-hint__sparkle";
+      sparkle.textContent = index % 3 === 0 ? "✧" : "✦";
+      Object.assign(sparkle.style, {
+        left: `${light.left}%`,
+        top: `${light.top}%`,
+        fontSize: `${light.size}px`,
+        animationDuration: `${light.duration}s`,
+        animationDelay: `${light.delay}s`,
+        rotate: `${light.rotation}deg`
+      });
+      this.halo.appendChild(sparkle);
+    }
   }
 
   private layout(target: Popup): HintLayout | null {

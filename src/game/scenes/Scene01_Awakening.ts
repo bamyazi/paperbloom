@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { STORY_CAMERA_SPEED } from "../story/StoryPacing.ts";
 import {
   buildElement,
   CameraRig,
@@ -35,7 +36,7 @@ const HOLD_TIME = 5.2;
  * canopies unfold in stages, shrubs, flowers, toadstools and grass. Once the
  * page has fully bloomed, the camera glides forward into the clearing where the
  * girl waits, the last spot of colour in the world, her hair a living rainbow.
- * There are no puzzles yet; this chapter teaches the language of the book.
+ * Three easy-to-find flowers introduce tapping, colouring and counting.
  */
 export class Scene01Awakening extends StoryScene {
   private puzzleStarted = false;
@@ -45,7 +46,7 @@ export class Scene01Awakening extends StoryScene {
 
   protected setup(): void {
     this.rig = new CameraRig(this.ctx.camera, {
-      speed: 1.6,
+      speed: STORY_CAMERA_SPEED,
       length: CAMERA_TRAVEL,
       holdTime: HOLD_TIME,
       eyeHeight: 1.4,
@@ -180,15 +181,12 @@ export class Scene01Awakening extends StoryScene {
    * is a target. Each gets its own colour (a little rainbow to "bring back").
    */
   private buildColorTargets(): void {
-    // A single, well-spaced row of flowers across the clearing so none hides
-    // behind another and every one stays comfortably on screen.
+    // Three large flowers keep the first counting puzzle simple and leave
+    // generous space between each tap target.
     const flowers = [
-      { x: -2.2, z: -11.0, scale: 1.15, color: "#e4572e" }, // red
-      { x: -1.32, z: -11.0, scale: 1.15, color: "#ef7215" }, // orange
-      { x: -0.44, z: -11.0, scale: 1.15, color: "#f4c20d" }, // yellow
-      { x: 0.44, z: -11.0, scale: 1.15, color: "#3fa34d" }, // green
-      { x: 1.32, z: -11.0, scale: 1.15, color: "#2b8ac9" }, // blue
-      { x: 2.2, z: -11.0, scale: 1.15, color: "#9b4dca" } // purple
+      { x: -1.8, z: -11.0, scale: 1.35, color: "#e4572e" }, // red
+      { x: 0, z: -11.0, scale: 1.35, color: "#f4c20d" }, // yellow
+      { x: 1.8, z: -11.0, scale: 1.35, color: "#2b8ac9" } // blue
     ];
     for (const f of flowers) {
       const popup = this.place(buildElement(FLOWER, { scale: f.scale }), f.x, f.z);
@@ -198,11 +196,11 @@ export class Scene01Awakening extends StoryScene {
 
   /** The heroine, waiting at the clearing — the one splash of colour. */
   private buildGirl(): void {
-    this.girl = this.place(buildElement(GIRL, { scale: 1.1 }), 0, CLEARING_Z, 1.2);
+    this.girl = this.place(buildElement(GIRL, { scale: 1.1 }), -0.95, CLEARING_Z, 1.2);
   }
 
   protected onUpdate(_dt: number): void {
-    if (!this.puzzleStarted && this.rig.atEnd) {
+    if (!this.puzzleStarted && this.rig.atEnd && !this.ctx.narrator.isSpeaking) {
       this.puzzleStarted = true;
       this.rig.pause();
       this.startColorPuzzle();

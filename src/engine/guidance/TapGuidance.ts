@@ -9,7 +9,7 @@ export interface TapHint {
 /** Presentation follows the artwork; it never changes the puzzle's hit areas. */
 export interface TapHintView {
   canShow(target: Popup): boolean;
-  show(target: Popup): void;
+  show(target: Popup, emphasized?: boolean): void;
   update(): void;
   reset(): void;
 }
@@ -25,7 +25,7 @@ export interface TapGuidanceOptions {
 const FIRST_HINT_DELAY_SECONDS = 8;
 const NEXT_HINT_DELAY_SECONDS = 12;
 
-/** Offers two patient reminders per pause, only while a puzzle is ready. */
+/** Repeats patient reminders while a puzzle is ready, strengthening the third. */
 export class TapGuidance {
   private targets: Popup[] = [];
   private quietSeconds = 0;
@@ -50,7 +50,11 @@ export class TapGuidance {
   update(dt: number, active = true): void {
     this.options.view?.update();
     if (!this.targets.length) return;
-    const target = this.targets.find((candidate) => this.isEligible(candidate));
+    // Keep pointing at the same piece while it is still available, so returning
+    // artwork at a viewport edge cannot leave a previous piece flashing.
+    const target = this.highlighted && this.isEligible(this.highlighted)
+      ? this.highlighted
+      : this.targets.find((candidate) => this.isEligible(candidate));
     if (!active || !target) {
       // Returning to the book gets a fresh grace period, never an overdue hint.
       this.restartPause();
@@ -61,14 +65,17 @@ export class TapGuidance {
       this.quietSeconds = 0;
       return;
     }
-    if (this.nextHint >= this.options.hints.length) return;
+    if (this.options.hints.length === 0) return;
     this.quietSeconds += Number.isFinite(dt) ? Math.max(0, dt) : 0;
     const delay = this.nextHint === 0 ? FIRST_HINT_DELAY_SECONDS : NEXT_HINT_DELAY_SECONDS;
     if (this.quietSeconds < delay) return;
 
     this.highlighted = target;
-    this.options.view?.show(target);
-    this.cancelHint = this.options.showHint(this.options.hints[this.nextHint]);
+    const emphasized = this.nextHint >= 2;
+    target.setHintFlashing(emphasized);
+    this.options.view?.show(target, emphasized);
+    const hint = this.options.hints[this.nextHint % this.options.hints.length];
+    this.cancelHint = this.options.showHint(hint);
     this.nextHint++;
     this.quietSeconds = 0;
   }
@@ -87,6 +94,7 @@ export class TapGuidance {
     const cancel = this.cancelHint;
     this.cancelHint = null;
     cancel?.();
+    this.highlighted?.setHintFlashing(false);
     this.highlighted = null;
     this.options.view?.reset();
     this.quietSeconds = 0;

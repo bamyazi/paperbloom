@@ -3,6 +3,7 @@ import { easeOutBack, easeInOutCubic, clamp } from "./Easing.ts";
 import type { Easing } from "./Easing.ts";
 import { PopupMotion } from "./animation/PopupMotion.ts";
 import type { PopupMotionOptions } from "./animation/PopupMotion.ts";
+import { TapHintPulse } from "./animation/TapHintPulse.ts";
 
 export interface HingeSpec {
   /** The paper cutout to animate. */
@@ -54,6 +55,7 @@ export class Popup {
   /** Hinged artwork moves here; contact shadows remain on the stage anchor. */
   readonly motionGroup = new THREE.Group();
   private readonly motion = new PopupMotion(this.motionGroup);
+  private readonly hintPulse = new TapHintPulse(this.motionGroup, this.motion.reducedMotion);
 
   /** Approximate half-width in X, used by the camera-corridor guard. */
   footprintRadius = 0.5;
@@ -161,6 +163,7 @@ export class Popup {
    * the colour is applied) and give a little celebratory pop. Idempotent.
    */
   colorize(color: string): void {
+    this.hintPulse.stop();
     if (this.colored) return;
     this.colored = true;
     this.highlighted = false;
@@ -183,6 +186,7 @@ export class Popup {
    * end. Idempotent; a no-op once coloured.
    */
   colorizeFade(color: string, duration = 0.8, delay = 0): void {
+    this.hintPulse.stop();
     if (this.colored || this.fading) return;
     this.currentColor = color;
     this.fading = true;
@@ -203,8 +207,15 @@ export class Popup {
     }
   }
 
+  /** Later idle hints softly fade the actual paper art, leaving tap areas intact. */
+  setHintFlashing(on: boolean): void {
+    if (on && !this.colored && !this.fading) this.hintPulse.start(this.clock);
+    else this.hintPulse.stop();
+  }
+
   update(dt: number): void {
     this.clock += dt;
+    this.hintPulse.update(this.clock);
 
     if (this.opening) {
       this.elapsed += dt;
