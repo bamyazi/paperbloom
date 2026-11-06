@@ -304,3 +304,8 @@ changes colouring or counting state. Ground taps project through the current
 camera in CSS pixels. Puzzle and exploration hotspots can coexist on a character:
 the puzzle action has priority, and its exact registration disposer leaves the
 playful response available afterwards. There is no separate page-advance control.
+
+Ponds and streams use `game/scenery/WaterSurface.ts`. These surfaces disable
+idle, tap and size motion: even a tiny tilt on a wide flat plane would push
+half the water through the paper floor. Colour washes and exploration still
+work; fish and ripples animate separately above the stationary surface.

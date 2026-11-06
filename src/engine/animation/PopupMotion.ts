@@ -2,6 +2,8 @@ import * as THREE from "three";
 
 /** Distances are world units; tilt is radians and breathe is a scale fraction. */
 export interface PopupMotionOptions {
+  /** Flat scenery can opt out of all idle, reaction and size motion. */
+  enabled?: boolean;
   bob?: number;
   drift?: number;
   tilt?: number;
@@ -13,7 +15,7 @@ export interface PopupMotionOptions {
 /** Animates only the artwork group, leaving its authored stage anchor intact. */
 export class PopupMotion {
   private options: Required<PopupMotionOptions> = {
-    bob: 0, drift: 0, tilt: 0.02, breathe: 0, speed: 0.8, reactionHeight: 0.16
+    enabled: true, bob: 0, drift: 0, tilt: 0.02, breathe: 0, speed: 0.8, reactionHeight: 0.16
   };
   private elapsed = 0;
   private reactionStart: number | null = null;
@@ -29,8 +31,13 @@ export class PopupMotion {
     this.options = { ...this.options, ...options };
   }
 
+  get enabled(): boolean {
+    return this.options.enabled;
+  }
+
   /** A single soft hop and nod answers a successful colouring tap. */
   react(): void {
+    if (!this.options.enabled) return;
     this.reactionStart = this.elapsed;
   }
 
@@ -39,7 +46,7 @@ export class PopupMotion {
     this.group.position.set(0, 0, 0);
     this.group.rotation.set(0, 0, 0);
     this.group.scale.setScalar(1);
-    if (this.reducedMotion) return;
+    if (this.reducedMotion || !this.options.enabled) return;
 
     const options = this.options;
     const time = elapsed * options.speed;

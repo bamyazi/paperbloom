@@ -1,12 +1,12 @@
 import * as THREE from "three";
 import { buildElement } from "../../engine/Element.ts";
-import { createCutout } from "../../engine/Cutout.ts";
 import { Popup } from "../../engine/Popup.ts";
 import { BACKDROP, BUSH, FLOWER, GRASS, HILL, LILY_PAD, MUSHROOM, REED, TREE } from "../elements.ts";
 import { makePaperTexture } from "../art/Paper.ts";
 import { drawStream } from "../art/scenery/Stream.ts";
 import type { EpisodeSetting } from "./EpisodeDefinition.ts";
 import { PLAY_PROFILES } from "../play/PlayfulContent.ts";
+import { createWaterSurface } from "../scenery/WaterSurface.ts";
 
 type PlacePopup = (popup: Popup, x: number, z: number, trigger?: number) => Popup;
 
@@ -59,21 +59,11 @@ export class EpisodeLandscape {
   }
 
   private addStream(): void {
-    const water = createCutout({ draw: drawStream, width: 8.5, height: 5, pixelsPerUnit: 64, doubleSided: true });
-    water.rotation.x = -Math.PI / 2;
-    // A stationary hinge keeps the water flat while the scene owns its fade.
-    const stream = new Popup().setIdle(0, 0);
-    stream.playProfile = PLAY_PROFILES.stream;
-    stream.naturalColor = "#a8cddd";
-    stream.footprintRadius = 4.25;
-    stream.root.position.y = 0.012;
-    stream.addHinge({
-      mesh: water,
-      position: new THREE.Vector3(),
-      meshOffset: new THREE.Vector3(),
-      from: 0,
-      to: 0,
-      duration: 0.6
+    const stream = createWaterSurface({
+      draw: drawStream,
+      width: 8.5,
+      depth: 5,
+      profile: PLAY_PROFILES.stream
     });
     this.place(stream, 0, -12.1, 0.2);
     for (const side of [-1, 1]) {

@@ -256,13 +256,13 @@ export class Popup {
       const t = this.pulse / 0.35;
       if (t >= 1) {
         this.pulse = 0;
-      } else if (!this.motion.reducedMotion) {
+      } else if (!this.motion.reducedMotion && this.motion.enabled) {
         this.motionGroup.scale.multiplyScalar(1 + Math.sin(t * Math.PI) * 0.14);
       }
     }
 
     // Gentle grow/shrink pulse on an uncoloured target, to draw a child's eye.
-    if (this.highlighted && !this.colored && this.opened && !this.motion.reducedMotion) {
+    if (this.highlighted && !this.colored && this.opened && !this.motion.reducedMotion && this.motion.enabled) {
       this.highlightClock += dt;
       const s = 1 + Math.sin(this.highlightClock * 2.8) * 0.1;
       for (const hinge of this.hinges) hinge.mesh.scale.setScalar(s);

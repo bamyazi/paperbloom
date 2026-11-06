@@ -5,13 +5,13 @@ import {
   CameraRig,
   ColorTarget,
   ColoringPuzzle,
-  createCutout,
   Popup,
   StoryScene
 } from "../../engine/index.ts";
 import { makePaperTexture } from "../art/Paper.ts";
 import { drawPond } from "../art/Figures.ts";
 import { CHARACTER_ENDINGS, PLAY_PROFILES } from "../play/PlayfulContent.ts";
+import { createWaterSurface } from "../scenery/WaterSurface.ts";
 import {
   BACKDROP,
   BUSH,
@@ -100,20 +100,13 @@ export class Scene02Frog extends StoryScene {
     crease.position.set(0, 0.001, -18);
     this.root.add(crease);
 
-    const water = createCutout({ draw: drawPond, width: 8, height: 5.5, pixelsPerUnit: 64, doubleSided: true });
-    water.rotation.x = -Math.PI / 2;
-    const pond = new Popup();
-    pond.playProfile = PLAY_PROFILES.pond;
-    pond.naturalColor = "#a8cddd";
-    pond.root.position.set(0, 0.012, -11);
-    pond.addHinge({
-      mesh: water,
-      position: new THREE.Vector3(),
-      meshOffset: new THREE.Vector3(),
-      from: 0,
-      to: 0,
-      duration: 0.6
+    const pond = createWaterSurface({
+      draw: drawPond,
+      width: 8,
+      depth: 5.5,
+      profile: PLAY_PROFILES.pond
     });
+    pond.root.position.z = -11;
     this.addPopup(pond, 0.1);
   }
 
