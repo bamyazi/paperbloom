@@ -6,6 +6,7 @@ import { BACKDROP, BUSH, FLOWER, GRASS, HILL, LILY_PAD, MUSHROOM, REED, TREE } f
 import { makePaperTexture } from "../art/Paper.ts";
 import { drawStream } from "../art/scenery/Stream.ts";
 import type { EpisodeSetting } from "./EpisodeDefinition.ts";
+import { PLAY_PROFILES } from "../play/PlayfulContent.ts";
 
 type PlacePopup = (popup: Popup, x: number, z: number, trigger?: number) => Popup;
 
@@ -62,6 +63,7 @@ export class EpisodeLandscape {
     water.rotation.x = -Math.PI / 2;
     // A stationary hinge keeps the water flat while the scene owns its fade.
     const stream = new Popup().setIdle(0, 0);
+    stream.playProfile = PLAY_PROFILES.stream;
     stream.naturalColor = "#a8cddd";
     stream.footprintRadius = 4.25;
     stream.root.position.y = 0.012;

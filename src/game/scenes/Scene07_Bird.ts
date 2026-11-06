@@ -166,6 +166,7 @@ export class Scene07Bird extends StoryScene {
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
       guidance: this.ctx.guidance,
+      exploration: this.exploration,
       targets: this.colorTargets,
       onColor: (remaining) => {
         if (remaining > 0) this.ctx.hud.showCaption("“Tweet-tweet! Help my friends too!”", 0, "bird");

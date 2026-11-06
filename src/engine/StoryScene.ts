@@ -14,6 +14,7 @@ import {
 import { ChapterCelebration } from "./celebration/ChapterCelebration.ts";
 import { startGirlCheer } from "../game/art/Figures.ts";
 import type { TapGuidance } from "./guidance/TapGuidance.ts";
+import type { SceneExploration } from "./exploration/SceneExploration.ts";
 
 /** Shared services handed to every scene when it becomes active. */
 export interface SceneContext {
@@ -24,6 +25,7 @@ export interface SceneContext {
   narrator: Narrator;
   sound: SoundEngine;
   guidance?: TapGuidance;
+  createExploration?: (root: THREE.Group) => SceneExploration;
 }
 
 interface TriggeredPopup {
@@ -42,6 +44,7 @@ export abstract class StoryScene {
   protected ctx!: SceneContext;
   protected rig!: CameraRig;
   protected girl?: Popup;
+  protected exploration?: SceneExploration;
 
   /** Fires once after the animated hold and a quiet pause following narration. */
   onComplete?: () => void;
@@ -70,6 +73,7 @@ export abstract class StoryScene {
     this.ctx = ctx;
     this.ctx.hud.counting?.reset();
     this.ctx.guidance?.reset();
+    this.exploration = ctx.createExploration?.(this.root);
     ctx.scene.add(this.root);
     this.setup();
   }
@@ -82,6 +86,7 @@ export abstract class StoryScene {
     this.guardCorridor(popup);
     this.root.add(popup.root);
     this.popups.push({ popup, triggerTime, triggered: false });
+    this.exploration?.add(popup);
   }
 
   private guardCorridor(popup: Popup): void {
@@ -148,6 +153,7 @@ export abstract class StoryScene {
     }
     this.celebration?.update(dt);
     this.onUpdate(dt);
+    this.exploration?.update(dt);
     if (wasCompleted) this.updateCompletion(dt);
   }
 
@@ -165,6 +171,8 @@ export abstract class StoryScene {
   }
 
   exit(): void {
+    this.exploration?.dispose();
+    this.exploration = undefined;
     this.ctx.guidance?.reset();
     this.ctx.hud.counting?.reset();
     this.completionNotified = true;

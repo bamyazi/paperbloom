@@ -3,6 +3,8 @@ import { test } from "node:test";
 import * as THREE from "three";
 import { InteractionManager } from "../src/engine/interaction/InteractionManager.ts";
 import type { Hotspot } from "../src/engine/interaction/Hotspot.ts";
+import { ColoringPuzzle } from "../src/engine/ColoringPuzzle.ts";
+import { Popup } from "../src/engine/Popup.ts";
 
 interface CanvasRect {
   left: number;
@@ -297,4 +299,113 @@ test("disposal clears hover, releases capture and removes pointer handling", () 
   assert.equal(target.clicks(), 0);
   assert.deepEqual(target.hovers, [true, false]);
   assert.equal(canvas.capturedPointers.size, 0);
+});
+
+test("a registration disposer removes only its own action and restores hover exactly once", (context) => {
+  const { canvas, manager } = createFixture();
+  context.after(() => manager.dispose());
+  const puzzle = createTarget();
+  let chats = 0;
+  const stopExploration = manager.register({
+    object: puzzle.hotspot.object,
+    priority: -1,
+    onClick: () => { chats++; }
+  });
+  const stopPuzzle = manager.register(puzzle.hotspot);
+  canvas.emit("pointermove", { pointerId: 1, clientX: 500, clientY: 250, pointerType: "mouse" });
+  assert.deepEqual(puzzle.hovers, [true]);
+  stopPuzzle();
+  stopPuzzle();
+  assert.deepEqual(puzzle.hovers, [true, false]);
+  assert.equal(canvas.style.cursor, "default");
+  canvas.tap(500, 250);
+  assert.equal(chats, 1, "the separate action on this same object survives");
+  assert.equal(puzzle.clicks(), 0);
+  stopExploration();
+  stopExploration();
+  canvas.tap(500, 250);
+  assert.equal(chats, 1);
+});
+
+test("colouring removes its own action, preserves character chat and discards a second stale finger", (context) => {
+  const { canvas, manager } = createFixture();
+  context.after(() => manager.dispose());
+  const popup = new Popup();
+  popup.addHinge({
+    mesh: createTarget().hotspot.object as THREE.Mesh,
+    position: new THREE.Vector3(),
+    from: 0,
+    to: 0
+  });
+  popup.snapOpen();
+  let chats = 0;
+  let progress = 0;
+  let completions = 0;
+  let misses = 0;
+  manager.onMiss(() => { misses++; });
+  manager.register({ object: popup.root, priority: -1, onClick: () => { chats++; } });
+  new ColoringPuzzle({
+    interaction: manager,
+    targets: [{ popup, color: "#efc246" }],
+    onColor: () => { progress++; },
+    onComplete: () => { completions++; }
+  });
+
+  canvas.emit("pointerdown", { pointerId: 1, clientX: 500, clientY: 250 });
+  canvas.emit("pointerdown", { pointerId: 2, clientX: 500, clientY: 250 });
+  canvas.emit("pointerup", { pointerId: 1, clientX: 500, clientY: 250 });
+  canvas.emit("pointerup", { pointerId: 2, clientX: 500, clientY: 250 });
+  assert.equal(popup.isColored, true);
+  assert.equal(progress, 1);
+  assert.equal(completions, 1);
+  assert.equal(chats, 0);
+  assert.equal(misses, 0, "a completed target's stale touch is not an empty-paper tap");
+  canvas.tap(500, 250, 3);
+  assert.equal(chats, 1);
+  assert.equal(progress, 1);
+  assert.equal(completions, 1);
+});
+
+test("empty-paper taps notify subscribers in canvas CSS pixels and unsubscribe independently", (context) => {
+  const { canvas, manager } = createFixture();
+  context.after(() => manager.dispose());
+  const first: { x: number; y: number }[] = [];
+  const second: { x: number; y: number }[] = [];
+  const stopFirst = manager.onMiss((point) => { first.push(point); });
+  const stopSecond = manager.onMiss((point) => { second.push(point); });
+  canvas.tap(210, 160);
+  assert.deepEqual(first, [{ x: 110, y: 110 }]);
+  assert.deepEqual(second, first);
+  stopFirst();
+  stopFirst();
+  canvas.tap(220, 170);
+  assert.equal(first.length, 1);
+  assert.deepEqual(second.at(-1), { x: 120, y: 120 });
+  stopSecond();
+  canvas.tap(230, 180);
+  assert.equal(second.length, 2);
+});
+
+test("hits, swipes, cancelled gestures and disabled input do not report empty-paper taps", (context) => {
+  const { canvas, manager } = createFixture();
+  context.after(() => manager.dispose());
+  let misses = 0;
+  manager.onMiss(() => { misses++; });
+  const target = createTarget();
+  manager.register(target.hotspot);
+  canvas.tap(500, 250);
+  assert.equal(target.clicks(), 1);
+  const blank = { pointerId: 2, clientX: 700, clientY: 350 };
+  canvas.emit("pointerdown", blank);
+  canvas.emit("pointerup", { ...blank, clientX: 740 });
+  canvas.emit("pointerdown", blank);
+  canvas.emit("pointercancel", blank);
+  canvas.emit("pointerup", blank);
+  manager.setEnabled(false);
+  canvas.tap(700, 350);
+  manager.setEnabled(true);
+  canvas.emit("pointerup", blank);
+  assert.equal(misses, 0);
+  canvas.tap(700, 350);
+  assert.equal(misses, 1, "a fresh unhit tap still works after the cancelled gestures");
 });

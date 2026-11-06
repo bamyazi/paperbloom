@@ -90,9 +90,14 @@ class SceneCanvas extends EventTarget {
 class ObservedInteraction extends InteractionManager {
   readonly active: Hotspot[] = [];
 
-  override register(hotspot: Hotspot): void {
+  override register(hotspot: Hotspot): () => void {
     this.active.push(hotspot);
-    super.register(hotspot);
+    const unregister = super.register(hotspot);
+    return () => {
+      const index = this.active.indexOf(hotspot);
+      if (index >= 0) this.active.splice(index, 1);
+      unregister();
+    };
   }
 
   override unregister(object: THREE.Object3D): void {

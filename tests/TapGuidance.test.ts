@@ -81,6 +81,24 @@ test("the first hint waits for eight quiet seconds after narration finishes", ()
   assert.equal(f.shown[0], f.targets[0]);
 });
 
+test("a character can own its puzzle hints without leaking that voice into the next chapter", () => {
+  const f = fixture();
+  const frogHints: TapHint[] = [{ text: "Ribbit! Can you tap me?", speaker: "frog" }];
+  f.guidance.start(f.targets, frogHints);
+  f.guidance.update(8);
+  assert.equal(f.spoken.at(-1), frogHints[0]);
+  f.narration.active = false;
+  f.guidance.update(12);
+  assert.equal(f.spoken.at(-1), frogHints[0]);
+  f.guidance.reset();
+  const nextChapterTarget = target();
+  f.visible.add(nextChapterTarget);
+  f.guidance.start([nextChapterTarget]);
+  f.guidance.update(8);
+  assert.equal(f.spoken.at(-1), f.hints[0]);
+  assert.equal(f.emphasized.at(-1), false);
+});
+
 test("queued counting or other narration cannot be interrupted by an idle hint", () => {
   const f = fixture();
   f.guidance.update(7);

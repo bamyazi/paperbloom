@@ -12,6 +12,7 @@ interface Press {
 export class InteractionManager {
   private readonly hotspots: Hotspot[] = [];
   private readonly presses = new Map<number, Press>();
+  private readonly missListeners = new Set<(point: ScreenPoint) => void>();
   private readonly picker: HotspotPicker;
   private readonly diagnostics: TapDiagnostics;
   private hovered: Hotspot | null = null;
@@ -27,14 +28,33 @@ export class InteractionManager {
     domElement.addEventListener("lostpointercapture", this.handlePointerCancel);
   }
 
-  register(hotspot: Hotspot): void {
+  /** The returned disposer owns this action, even when its object has others. */
+  register(hotspot: Hotspot): () => void {
     this.hotspots.push(hotspot);
+    let registered = true;
+    return () => {
+      if (!registered) return;
+      registered = false;
+      this.removeHotspot(hotspot);
+    };
   }
 
+  /** Compatibility API: remove the first action registered for an object. */
   unregister(object: THREE.Object3D): void {
-    const index = this.hotspots.findIndex((hotspot) => hotspot.object === object);
+    const hotspot = this.hotspots.find((candidate) => candidate.object === object);
+    if (hotspot) this.removeHotspot(hotspot);
+  }
+
+  /** Listen for a real tap on empty paper, in canvas-local CSS pixels. */
+  onMiss(listener: (point: ScreenPoint) => void): () => void {
+    this.missListeners.add(listener);
+    return () => { this.missListeners.delete(listener); };
+  }
+
+  private removeHotspot(hotspot: Hotspot): void {
+    const index = this.hotspots.indexOf(hotspot);
     if (index < 0) return;
-    if (this.hovered === this.hotspots[index]) this.setHovered(null);
+    if (this.hovered === hotspot) this.setHovered(null);
     this.hotspots.splice(index, 1);
   }
 
@@ -54,6 +74,7 @@ export class InteractionManager {
 
   dispose(): void {
     this.clear();
+    this.missListeners.clear();
     this.diagnostics.dispose();
     this.domElement.removeEventListener("pointermove", this.handlePointerMove);
     this.domElement.removeEventListener("pointerdown", this.handlePointerDown);
@@ -119,7 +140,10 @@ export class InteractionManager {
       1 - point.y / rect.height * 2
     );
     this.diagnostics.show(pointer, rect, this.hotspots, hit);
-    hit?.onClick();
+    if (hit) hit.onClick();
+    else {
+      for (const listener of this.missListeners) listener(point);
+    }
   };
 
   private readonly handlePointerCancel = (event: PointerEvent): void => {

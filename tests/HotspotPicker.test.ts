@@ -226,3 +226,37 @@ test("does not turn empty gaps between a hotspot's artwork pieces into targets",
   );
   assert.equal(picker.pick([hotspot], { x: 500, y: 500 }, squareViewport), null);
 });
+
+test("puzzle actions beat exploration on the same paper piece, including forgiving edges", () => {
+  const picker = new HotspotPicker(createCamera(squareViewport));
+  const art = createArt();
+  const exploration = { ...createHotspot(art), priority: -1 };
+  const puzzle = createHotspot(art);
+  for (const hotspots of [[exploration, puzzle], [puzzle, exploration]]) {
+    assert.equal(picker.pick(hotspots, { x: 500, y: 500 }, squareViewport), puzzle);
+    assert.equal(picker.pick(hotspots, { x: 617, y: 500 }, squareViewport), puzzle);
+  }
+});
+
+test("action priority never makes a farther piece steal a tap from nearer painted scenery", () => {
+  const picker = new HotspotPicker(createCamera(squareViewport));
+  const nearArt = createArt();
+  const farArt = createArt();
+  farArt.position.z = -1;
+  const scenery = { ...createHotspot(nearArt), priority: -1 };
+  const puzzle = { ...createHotspot(farArt), priority: 10 };
+  for (const hotspots of [[scenery, puzzle], [puzzle, scenery]]) {
+    assert.equal(picker.pick(hotspots, { x: 500, y: 500 }, squareViewport), scenery);
+  }
+});
+
+test("low-priority painted scenery still beats an unrelated puzzle's broad padding", () => {
+  const picker = new HotspotPicker(createCamera(squareViewport));
+  const broadArt = createArt();
+  broadArt.position.x = -1.05;
+  const broad = { ...createHotspot(broadArt), priority: 10 };
+  const painted = { ...createHotspot(createArt(0.2, 1)), priority: -1 };
+  for (const hotspots of [[broad, painted], [painted, broad]]) {
+    assert.equal(picker.pick(hotspots, { x: 500, y: 500 }, squareViewport), painted);
+  }
+});

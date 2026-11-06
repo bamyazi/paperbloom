@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { STORY_CAMERA_SPEED } from "../story/StoryPacing.ts";
+import { CHARACTER_ENDINGS } from "../play/PlayfulContent.ts";
 import {
   buildElement,
   CameraRig,
@@ -164,9 +165,11 @@ export class Scene08Rabbit extends StoryScene {
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
       guidance: this.ctx.guidance,
+      exploration: this.exploration,
       targets: this.colorTargets,
       onComplete: () => {
-        this.ctx.hud.showCaption("“My fur feels warm again. Thank you, Mabli!”", 0, "rabbit");
+        const line = CHARACTER_ENDINGS.rabbit;
+        this.ctx.hud.showCaption(line.text, 0, line.speaker);
         this.complete();
       }
     });

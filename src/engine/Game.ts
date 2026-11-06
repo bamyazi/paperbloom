@@ -8,6 +8,11 @@ import { CountingLesson } from "./learning/CountingLesson.ts";
 import type { CountingView } from "./learning/CountingLesson.ts";
 import { TapGuidance } from "./guidance/TapGuidance.ts";
 import type { TapHint, TapHintView } from "./guidance/TapGuidance.ts";
+import { SceneExploration } from "./exploration/SceneExploration.ts";
+import type { ExplorationEffects } from "./exploration/SceneExploration.ts";
+import { PlayfulNarration } from "./exploration/PlayfulNarration.ts";
+import type { PlayProfile } from "./exploration/PlayProfile.ts";
+import { TapWorldProjector } from "./exploration/TapWorldProjector.ts";
 import { SoundEngine } from "./SoundEngine.ts";
 import { SceneManager } from "./SceneManager.ts";
 import { Transition } from "./Transition.ts";
@@ -25,6 +30,11 @@ const MAX_VFOV = 120;
 export interface TapGuidancePresentation {
   hints: readonly TapHint[];
   createView: (camera: THREE.Camera) => TapHintView;
+}
+
+export interface ExplorationPresentation {
+  ground: PlayProfile;
+  createEffects: (root: THREE.Group, camera: THREE.Camera) => ExplorationEffects;
 }
 
 /**
@@ -75,7 +85,8 @@ export class Game {
     canvas: HTMLCanvasElement,
     narrationClips: NarrationClipMap = {},
     countingView?: CountingView,
-    tapHelp?: TapGuidancePresentation
+    tapHelp?: TapGuidancePresentation,
+    exploration?: ExplorationPresentation
   ) {
     // Phones have weak GPUs but very high pixel densities; antialiasing and a
     // 2x+ pixel ratio there flood the fill rate and drop the frame rate, which
@@ -129,7 +140,18 @@ export class Game {
       hud: this.hud,
       narrator: this.narrator,
       sound: this.sound,
-      guidance: this.guidance
+      guidance: this.guidance,
+      createExploration: exploration ? (root) => new SceneExploration(
+        this.interaction,
+        new PlayfulNarration(
+          () => this.narrator.isSpeaking,
+          (line) => this.hud.showPlayfulLine(line.text, line.speaker)
+        ),
+        exploration.createEffects(root, this.camera),
+        new TapWorldProjector(this.camera, canvas),
+        exploration.ground,
+        () => this.sound.pop()
+      ) : undefined
     };
     this.scenes = new SceneManager(context, new Transition());
 

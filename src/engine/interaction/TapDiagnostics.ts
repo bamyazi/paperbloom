@@ -81,12 +81,9 @@ export class TapDiagnostics {
   }
 
   private createOverlay(): HTMLDivElement | null {
-    if (
-      typeof window === "undefined" ||
-      !new URLSearchParams(window.location.search).has("debug")
-    ) {
-      return null;
-    }
+    if (typeof window === "undefined") return null;
+    const parameters = new URLSearchParams(window.location.search);
+    if (!parameters.has("debug") || parameters.has("no-tap-debug")) return null;
 
     const overlay = document.createElement("div");
     Object.assign(overlay.style, {

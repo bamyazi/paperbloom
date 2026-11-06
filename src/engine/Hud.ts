@@ -78,6 +78,15 @@ export class Hud {
 
   /** Idle help may speak after counting starts, once all number audio is quiet. */
   showTapHint(text: string, speaker: StoryVoice = "narrator"): () => void {
+    return this.showAside(text, speaker);
+  }
+
+  /** A playful optional reply shares the same owned-caption lifecycle as help. */
+  showPlayfulLine(text: string, speaker: StoryVoice): () => void {
+    return this.showAside(text, speaker);
+  }
+
+  private showAside(text: string, speaker: StoryVoice): () => void {
     this.presentCaption(text, 0);
     const generation = this.captionGeneration;
     const stopSpeaking = this.narrator?.speak(text, speaker);

@@ -11,6 +11,7 @@ import {
 } from "../../engine/index.ts";
 import { makePaperTexture } from "../art/Paper.ts";
 import { drawPond } from "../art/Figures.ts";
+import { CHARACTER_ENDINGS, PLAY_PROFILES } from "../play/PlayfulContent.ts";
 import {
   BACKDROP,
   BUSH,
@@ -99,10 +100,21 @@ export class Scene02Frog extends StoryScene {
     crease.position.set(0, 0.001, -18);
     this.root.add(crease);
 
-    const pond = createCutout({ draw: drawPond, width: 8, height: 5.5, pixelsPerUnit: 64, doubleSided: true });
-    pond.rotation.x = -Math.PI / 2;
-    pond.position.set(0, 0.012, -11);
-    this.root.add(pond);
+    const water = createCutout({ draw: drawPond, width: 8, height: 5.5, pixelsPerUnit: 64, doubleSided: true });
+    water.rotation.x = -Math.PI / 2;
+    const pond = new Popup();
+    pond.playProfile = PLAY_PROFILES.pond;
+    pond.naturalColor = "#a8cddd";
+    pond.root.position.set(0, 0.012, -11);
+    pond.addHinge({
+      mesh: water,
+      position: new THREE.Vector3(),
+      meshOffset: new THREE.Vector3(),
+      from: 0,
+      to: 0,
+      duration: 0.6
+    });
+    this.addPopup(pond, 0.1);
   }
 
   private buildHorizon(): void {
@@ -186,9 +198,11 @@ export class Scene02Frog extends StoryScene {
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
       guidance: this.ctx.guidance,
+      exploration: this.exploration,
       targets: this.colorTargets,
       onComplete: () => {
-        this.ctx.hud.showCaption("“Ribbit-ribbit! I'm green again! Thank you, Mabli!”", 0, "frog");
+        const line = CHARACTER_ENDINGS.frog;
+        this.ctx.hud.showCaption(line.text, 0, line.speaker);
         this.complete();
       }
     });

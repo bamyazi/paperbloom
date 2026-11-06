@@ -1,17 +1,17 @@
 import * as THREE from "three";
 
-interface BorrowedMaterial {
-  material: THREE.Material;
-  opacity: number;
-  transparent: boolean;
+interface BorrowedTint {
+  color: THREE.Color;
+  original: THREE.Color;
 }
 
 const PULSE_SECONDS = 1.8;
-const MINIMUM_OPACITY = 0.6;
+const MAXIMUM_TINT = 0.4;
+const WARM_GOLD = new THREE.Color("#ffd36b");
 
-/** Temporarily borrows artwork opacity; the popup still owns every material. */
+/** Borrows artwork tint without revealing other paper pieces behind it. */
 export class TapHintPulse {
-  private readonly materials: BorrowedMaterial[] = [];
+  private readonly materials: BorrowedTint[] = [];
   private active = false;
   private startedAt = 0;
 
@@ -31,11 +31,8 @@ export class TapHintPulse {
       for (const material of materials) {
         if (seen.has(material)) continue;
         seen.add(material);
-        this.materials.push({ material, opacity: material.opacity, transparent: material.transparent });
-        if (!material.transparent) {
-          material.transparent = true;
-          material.needsUpdate = true;
-        }
+        const color = (material as THREE.Material & { color?: THREE.Color }).color;
+        if (color instanceof THREE.Color) this.materials.push({ color, original: color.clone() });
       }
     });
   }
@@ -44,20 +41,14 @@ export class TapHintPulse {
   update(elapsed: number): void {
     if (!this.active) return;
     const phase = Math.max(0, elapsed - this.startedAt) * Math.PI * 2 / PULSE_SECONDS;
-    const fade = MINIMUM_OPACITY + (1 - MINIMUM_OPACITY) * (1 + Math.cos(phase)) / 2;
-    for (const { material, opacity } of this.materials) material.opacity = opacity * fade;
+    const strength = MAXIMUM_TINT * (1 - Math.cos(phase)) / 2;
+    for (const { color, original } of this.materials) color.copy(original).lerp(WARM_GOLD, strength);
   }
 
   /** Restore exact authored values before colour reactions or scene cleanup. */
   stop(): void {
     if (!this.active) return;
-    for (const { material, opacity, transparent } of this.materials) {
-      material.opacity = opacity;
-      if (material.transparent !== transparent) {
-        material.transparent = transparent;
-        material.needsUpdate = true;
-      }
-    }
+    for (const { color, original } of this.materials) color.copy(original);
     this.materials.length = 0;
     this.active = false;
   }

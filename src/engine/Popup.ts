@@ -3,6 +3,7 @@ import { easeOutBack, easeInOutCubic, clamp } from "./Easing.ts";
 import type { Easing } from "./Easing.ts";
 import { PopupMotion } from "./animation/PopupMotion.ts";
 import type { PopupMotionOptions } from "./animation/PopupMotion.ts";
+import type { PlayProfile } from "./exploration/PlayProfile.ts";
 import { TapHintPulse } from "./animation/TapHintPulse.ts";
 
 export interface HingeSpec {
@@ -51,6 +52,7 @@ interface Hinge {
  * flat cutouts z-fighting the page while they wait folded-down.
  */
 export class Popup {
+  playProfile?: PlayProfile;
   readonly root = new THREE.Group();
   /** Hinged artwork moves here; contact shadows remain on the stage anchor. */
   readonly motionGroup = new THREE.Group();
@@ -103,6 +105,12 @@ export class Popup {
   configureMotion(options: PopupMotionOptions): this {
     this.motion.configure(options);
     return this;
+  }
+
+  /** A playful tap reaction never colours a piece or changes its puzzle state. */
+  react(): void {
+    this.motion.react();
+    this.pulse = 0.0001;
   }
 
   addHinge(spec: HingeSpec): this {
@@ -207,7 +215,7 @@ export class Popup {
     }
   }
 
-  /** Later idle hints softly fade the actual paper art, leaving tap areas intact. */
+  /** Later idle hints softly warm the paper art, leaving tap areas intact. */
   setHintFlashing(on: boolean): void {
     if (on && !this.colored && !this.fading) this.hintPulse.start(this.clock);
     else this.hintPulse.stop();

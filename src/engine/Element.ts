@@ -4,6 +4,7 @@ import { createCutout } from "./Cutout.ts";
 import type { CanvasDraw } from "./Cutout.ts";
 import type { Easing } from "./Easing.ts";
 import type { PopupMotionOptions } from "./animation/PopupMotion.ts";
+import type { PlayProfile } from "./exploration/PlayProfile.ts";
 
 /**
  * Element.ts
@@ -49,6 +50,8 @@ export interface ElementPart {
 
 /** A complete element: its parts plus presentation defaults. */
 export interface ElementDefinition {
+  /** Optional playful replies and surprises, independent of counting targets. */
+  play?: PlayProfile;
   parts: ElementPart[];
   /** Corridor-guard footprint half-width at scale 1 (default: widest part). */
   footprintRadius?: number;
@@ -104,6 +107,7 @@ export function buildElement(
 ): Popup {
   const scale = options.scale ?? 1;
   const popup = new Popup();
+  popup.playProfile = def.play;
 
   let widestHalf = 0;
   for (const part of def.parts) {

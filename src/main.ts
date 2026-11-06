@@ -6,11 +6,16 @@ import { addBookCover } from "./game/presentation/BookCover.ts";
 import { CountingDisplay } from "./game/learning/CountingDisplay.ts";
 import { TapHintDisplay } from "./game/presentation/TapHintDisplay.ts";
 import { TAP_HINTS } from "./game/story/TapHints.ts";
+import { PLAY_PROFILES } from "./game/play/PlayfulContent.ts";
+import { PaperSurprises } from "./game/play/effects/PaperSurprises.ts";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const game = new Game(canvas, NARRATION_CLIPS, new CountingDisplay(), {
   hints: TAP_HINTS,
   createView: (camera) => new TapHintDisplay(camera, canvas)
+}, {
+  ground: PLAY_PROFILES.ground,
+  createEffects: (root, camera) => new PaperSurprises(root, camera)
 });
 addBookCover(document.getElementById("title-card")!);
 

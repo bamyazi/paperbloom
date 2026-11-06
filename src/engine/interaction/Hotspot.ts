@@ -8,6 +8,8 @@ export interface Hotspot {
   cursor?: string;
   /** Allow a small screen-space margin around each visible cutout. */
   generous?: boolean;
+  /** Resolve coexisting actions on the same object; higher wins. Default 0. */
+  priority?: number;
 }
 
 export interface ScreenPoint {

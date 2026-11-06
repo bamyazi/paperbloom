@@ -171,6 +171,7 @@ export class Scene03Butterflies extends StoryScene {
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
       guidance: this.ctx.guidance,
+      exploration: this.exploration,
       targets: this.colorTargets,
       onColor: (remaining) => {
         if (remaining > 0) {

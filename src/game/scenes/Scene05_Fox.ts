@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { STORY_CAMERA_SPEED } from "../story/StoryPacing.ts";
+import { CHARACTER_ENDINGS } from "../play/PlayfulContent.ts";
 import {
   buildElement,
   CameraRig,
@@ -164,9 +165,11 @@ export class Scene05Fox extends StoryScene {
       sound: this.ctx.sound,
       counting: this.ctx.hud.counting,
       guidance: this.ctx.guidance,
+      exploration: this.exploration,
       targets: this.colorTargets,
       onComplete: () => {
-        this.ctx.hud.showCaption("“Oh, my orange coat! Thank you, Mabli!”", 0, "fox");
+        const line = CHARACTER_ENDINGS.fox;
+        this.ctx.hud.showCaption(line.text, 0, line.speaker);
         this.complete();
       }
     });

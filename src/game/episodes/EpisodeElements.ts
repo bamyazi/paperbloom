@@ -3,8 +3,10 @@ import { drawBee } from "../art/animals/Bee.ts";
 import { drawDuckling } from "../art/animals/Duckling.ts";
 import { drawSnail } from "../art/animals/Snail.ts";
 import { drawFirefly } from "../art/animals/Firefly.ts";
+import { PLAY_PROFILES } from "../play/PlayfulContent.ts";
 
 export const BEE: ElementDefinition = {
+  play: PLAY_PROFILES.bee,
   parts: [{ draw: drawBee, width: 1.2, height: 1.0, duration: 0.8, animated: true }],
   footprintRadius: 0.6,
   shadow: false,
@@ -13,6 +15,7 @@ export const BEE: ElementDefinition = {
 };
 
 export const DUCKLING: ElementDefinition = {
+  play: PLAY_PROFILES.duckling,
   parts: [{ draw: drawDuckling, width: 1.3, height: 1.4, duration: 0.8, animated: true }],
   footprintRadius: 0.65,
   naturalColor: "#f7cc45",
@@ -20,6 +23,7 @@ export const DUCKLING: ElementDefinition = {
 };
 
 export const SNAIL: ElementDefinition = {
+  play: PLAY_PROFILES.snail,
   parts: [{ draw: drawSnail, width: 1.7, height: 1.2, duration: 0.8, animated: true }],
   footprintRadius: 0.85,
   naturalColor: "#a879c4",
@@ -27,6 +31,7 @@ export const SNAIL: ElementDefinition = {
 };
 
 export const FIREFLY: ElementDefinition = {
+  play: PLAY_PROFILES.firefly,
   parts: [{ draw: drawFirefly, width: 1.0, height: 1.2, duration: 0.8, animated: true }],
   footprintRadius: 0.5,
   shadow: false,

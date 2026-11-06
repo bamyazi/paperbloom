@@ -49,7 +49,8 @@ export class HotspotPicker {
       // Always prefer the artwork under the finger to a neighbour's padding.
       for (const hit of this.raycaster.intersectObjects(meshes, false)) {
         const depth = hit.point.clone().project(this.camera).z;
-        if (depth < -1 || depth > 1 || hit.distance >= paintedDistance || !this.isPainted(hit)) continue;
+        if (depth < -1 || depth > 1 || !this.isPainted(hit)) continue;
+        if (painted && !this.prefersPainted(hotspot, hit.distance, painted, paintedDistance)) continue;
         painted = hotspot;
         paintedDistance = hit.distance;
       }
@@ -123,8 +124,20 @@ export class HotspotPicker {
   }
 
   private isCloser(candidate: PaddedHit, previous: PaddedHit): boolean {
+    const priority = this.sameObjectPriority(candidate.hotspot, previous.hotspot);
+    if (priority !== 0) return priority > 0;
     return candidate.edgeDistance < previous.edgeDistance ||
       (candidate.edgeDistance === previous.edgeDistance && candidate.centerDistance < previous.centerDistance);
+  }
+
+  private prefersPainted(candidate: Hotspot, distance: number, previous: Hotspot, previousDistance: number): boolean {
+    const priority = this.sameObjectPriority(candidate, previous);
+    return priority !== 0 ? priority > 0 : distance < previousDistance;
+  }
+
+  /** Priority belongs to actions on one piece, never to unrelated scenery. */
+  private sameObjectPriority(candidate: Hotspot, previous: Hotspot): number {
+    return candidate.object === previous.object ? (candidate.priority ?? 0) - (previous.priority ?? 0) : 0;
   }
 
   private isPainted(hit: THREE.Intersection): boolean {

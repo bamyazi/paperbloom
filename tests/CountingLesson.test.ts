@@ -25,7 +25,10 @@ test("each new target counts once and retapping a coloured target does not count
   const fixture = createFixture();
   const hotspots: Hotspot[] = [];
   const interaction = {
-    register: (hotspot: Hotspot) => hotspots.push(hotspot),
+    register: (hotspot: Hotspot) => {
+      hotspots.push(hotspot);
+      return () => {};
+    },
     unregister: () => {}
   } as unknown as InteractionManager;
   let complete = 0;

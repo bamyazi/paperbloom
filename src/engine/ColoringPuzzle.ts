@@ -3,6 +3,7 @@ import type { Popup } from "./Popup.ts";
 import type { SoundEngine } from "./SoundEngine.ts";
 import type { CountingLesson } from "./learning/CountingLesson.ts";
 import type { TapGuidance } from "./guidance/TapGuidance.ts";
+import type { SceneExploration } from "./exploration/SceneExploration.ts";
 
 export interface ColorTarget {
   /** The element to colour when tapped. */
@@ -21,6 +22,7 @@ export interface ColoringPuzzleOptions {
   counting?: CountingLesson;
   /** Patient reminders while this puzzle has uncoloured targets. */
   guidance?: TapGuidance;
+  exploration?: SceneExploration;
   /** Fired after each successful colouring, with how many are left. */
   onColor?: (remaining: number, total: number) => void;
   /** Fired once every target has been coloured. */
@@ -36,23 +38,27 @@ export interface ColoringPuzzleOptions {
  * flowers, animals, objects — in any scene.
  */
 export class ColoringPuzzle {
+  private readonly registrations = new Map<ColorTarget, () => void>();
   private remaining: number;
   private done = false;
 
   constructor(private readonly options: ColoringPuzzleOptions) {
     this.remaining = options.targets.length;
     options.counting?.start(this.remaining);
-    options.guidance?.start(options.targets.map((target) => target.popup));
+    const popups = options.targets.map((target) => target.popup);
+    options.exploration?.startPuzzle(popups);
+    options.guidance?.start(popups, popups[0]?.playProfile?.idleHints);
     for (const target of options.targets) {
       // A CSS-pixel margin keeps taps forgiving without overlapping distant
       // targets with large invisible hit volumes.
       target.popup.setHighlighted(true);
-      options.interaction.register({
+      const unregister = options.interaction.register({
         object: target.popup.root,
         cursor: "pointer",
         generous: true,
         onClick: () => this.colorIn(target)
       });
+      this.registrations.set(target, unregister);
     }
     if (this.remaining === 0) this.finish();
   }
@@ -60,10 +66,12 @@ export class ColoringPuzzle {
   private colorIn(target: ColorTarget): void {
     if (target.popup.isColored) return;
     target.popup.colorize(target.color);
-    this.options.interaction.unregister(target.popup.root);
+    this.registrations.get(target)?.();
+    this.registrations.delete(target);
 
     this.remaining--;
     const total = this.options.targets.length;
+    this.options.exploration?.puzzleProgress();
     this.options.guidance?.progress(target.popup);
     this.options.counting?.advance();
     this.options.sound?.chime(total - this.remaining - 1);
@@ -74,6 +82,7 @@ export class ColoringPuzzle {
   private finish(): void {
     if (this.done) return;
     this.done = true;
+    this.options.exploration?.finishPuzzle();
     this.options.sound?.success();
     this.options.onComplete?.();
   }

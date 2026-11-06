@@ -37,6 +37,13 @@ support, then select **Open the book**. On a phone, play in landscape orientatio
 At the end, the large **AGAIN** button turns back to the first chapter for a
 fresh reading, with counting and hints reset.
 
+Explore the scenery while looking for the counting targets. Trees rustle and
+drop acorns, bushes reveal butterflies, rocks hide little snails, and tapping
+water makes a fish jump with a splash. Other taps make paper sparkles and small
+reactions; even empty paper responds. Frog, fox and rabbit have their own extra
+dialogue and reminders. These optional taps never change the count: solving the
+chapter's colouring puzzle still turns the page automatically after its ending.
+
 ## Art style
 
 Everything is generated procedurally on 2D canvases — **no image assets**. Scenery
@@ -96,6 +103,7 @@ The ending can be checked with
 before deploying them.
 Add `&silent` for automated visual playthroughs so a second test tab does not
 narrate over the player's preview.
+Add `&no-tap-debug` when checking scenery surprises without the hit-box overlay.
 
 ### Touch input and debugging
 
@@ -158,6 +166,7 @@ src/
     narration/              WAV lookup, audio lifecycle and fallback character voices
     learning/               Counting progress and ordered number narration
     guidance/               Quiet-time hint timing, eligible targets and dismissal
+    exploration/            Optional tap reactions, owned asides and blank-paper projection
     SoundEngine.ts          Synthesised effects and ambient music
     Transition.ts           Page-turn overlay
     transition/             Curved paper leaf, animation and cancellation lifecycle
@@ -167,6 +176,9 @@ src/
     learning/               Counting display and visual number feedback
     presentation/           Static illustrated book cover
                             Target-following hint halo and CSS-pixel projection
+    play/
+      PlayfulContent.ts     Scenery replies, character chatter, hints and endings
+      effects/              Fish, visitors, acorns and paper-star surprises
     story/
       StoryChapters.ts      createStoryChapters catalog, chapter IDs and order
       StoryPacing.ts        Shared forward camera speed for every chapter
@@ -259,7 +271,7 @@ rotation and character motion cannot move the halo away from the artwork.
 The halo is pointer-transparent and does not change picking. `Hud.showTapHint`
 and the cancellation handle returned by `Narrator.speak` dismiss only the owned
 hint, preserving any newer caption, counted number or closing dialogue.
-`engine/animation/TapHintPulse.ts` owns the marked artwork's gentle opacity pulse
+`engine/animation/TapHintPulse.ts` owns the marked artwork's gentle warm-light pulse
 and restores its material state when help ends. Reduced motion keeps help still.
 
 ### Restarting the book
@@ -271,3 +283,24 @@ the existing renderer, audio and mute settings. `Scene06Sky.exit` restores its
 borrowed fog/background colours so its finale tint cannot leak into a new book.
 The end card is inert while hidden and `showEndCard` re-arms the button for every
 subsequent reading.
+
+### Adding an exploration response
+
+Author a `PlayProfile` in `game/play/PlayfulContent.ts`, then reference it from an
+element's `play` field in `game/elements.ts` or `EpisodeElements.ts`. Its `lines`
+rotate as the child explores; `focusReplies` can identify a prop in the current
+frog, fox or rabbit puzzle. Character `idleHints` replace generic help for that
+chapter. All speech uses the same exact-text recording export workflow.
+
+Each `StoryScene` owns one `SceneExploration` instance and disposes it before
+freeing its artwork. Optional taps react and emit effects even while narration
+is busy; `PlayfulNarration` waits for quiet and cancels only its own aside before
+the next counted number. Finishing the puzzle silences further asides so its
+closing voice and automatic page turn cannot be held up by exploration.
+
+`PaperSurprises` owns a bounded pool of sprites and shared textures. Add a recipe
+and analytic trajectory under `game/play/effects/` for a new surprise; it never
+changes colouring or counting state. Ground taps project through the current
+camera in CSS pixels. Puzzle and exploration hotspots can coexist on a character:
+the puzzle action has priority, and its exact registration disposer leaves the
+playful response available afterwards. There is no separate page-advance control.

@@ -32,12 +32,16 @@ export class TapGuidance {
   private nextHint = 0;
   private highlighted: Popup | null = null;
   private cancelHint: (() => void) | null = null;
+  private hints: readonly TapHint[];
 
-  constructor(private readonly options: TapGuidanceOptions) {}
+  constructor(private readonly options: TapGuidanceOptions) {
+    this.hints = options.hints;
+  }
 
-  start(targets: readonly Popup[]): void {
+  start(targets: readonly Popup[], hints?: readonly TapHint[]): void {
     this.reset();
     this.targets = [...targets];
+    this.hints = hints?.length ? hints : this.options.hints;
   }
 
   /** Dismiss help before the puzzle queues its next number or closing line. */
@@ -65,7 +69,7 @@ export class TapGuidance {
       this.quietSeconds = 0;
       return;
     }
-    if (this.options.hints.length === 0) return;
+    if (this.hints.length === 0) return;
     this.quietSeconds += Number.isFinite(dt) ? Math.max(0, dt) : 0;
     const delay = this.nextHint === 0 ? FIRST_HINT_DELAY_SECONDS : NEXT_HINT_DELAY_SECONDS;
     if (this.quietSeconds < delay) return;
@@ -74,7 +78,7 @@ export class TapGuidance {
     const emphasized = this.nextHint >= 2;
     target.setHintFlashing(emphasized);
     this.options.view?.show(target, emphasized);
-    const hint = this.options.hints[this.nextHint % this.options.hints.length];
+    const hint = this.hints[this.nextHint % this.hints.length];
     this.cancelHint = this.options.showHint(hint);
     this.nextHint++;
     this.quietSeconds = 0;
@@ -82,6 +86,7 @@ export class TapGuidance {
 
   reset(): void {
     this.targets = [];
+    this.hints = this.options.hints;
     this.restartPause();
   }
 
